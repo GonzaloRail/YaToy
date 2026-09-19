@@ -1,0 +1,481 @@
+{
+  "source": "https://wikiroutes.info/es/arequipa/catalog",
+  "importedAt": "2026-09-19T20:54:49.004Z",
+  "routes": [
+    {
+      "id": "64517",
+      "code": "A 1",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64517",
+      "available": true,
+      "dataFile": "a-1.json"
+    },
+    {
+      "id": "65343",
+      "code": "A 2",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65343",
+      "available": false
+    },
+    {
+      "id": "64582",
+      "code": "A 3",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64582",
+      "available": false
+    },
+    {
+      "id": "64884",
+      "code": "A 4",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64884",
+      "available": false
+    },
+    {
+      "id": "64413",
+      "code": "A 5",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64413",
+      "available": false
+    },
+    {
+      "id": "65242",
+      "code": "A 6",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65242",
+      "available": false
+    },
+    {
+      "id": "65344",
+      "code": "A 7",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65344",
+      "available": false
+    },
+    {
+      "id": "65658",
+      "code": "A 8",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65658",
+      "available": false
+    },
+    {
+      "id": "65600",
+      "code": "A 9",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65600",
+      "available": false
+    },
+    {
+      "id": "64516",
+      "code": "A 10",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64516",
+      "available": false
+    },
+    {
+      "id": "65569",
+      "code": "A 11",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65569",
+      "available": false
+    },
+    {
+      "id": "65632",
+      "code": "A 12",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65632",
+      "available": false
+    },
+    {
+      "id": "65495",
+      "code": "A 13",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65495",
+      "available": false
+    },
+    {
+      "id": "64740",
+      "code": "A 14",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64740",
+      "available": false
+    },
+    {
+      "id": "65047",
+      "code": "A 15",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65047",
+      "available": false
+    },
+    {
+      "id": "64733",
+      "code": "A 17",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64733",
+      "available": false
+    },
+    {
+      "id": "65450",
+      "code": "A 18",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65450",
+      "available": false
+    },
+    {
+      "id": "64739",
+      "code": "A 19",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64739",
+      "available": false
+    },
+    {
+      "id": "65017",
+      "code": "A 20",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65017",
+      "available": false
+    },
+    {
+      "id": "64514",
+      "code": "A 21",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64514",
+      "available": false
+    },
+    {
+      "id": "65641",
+      "code": "A 22",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65641",
+      "available": false
+    },
+    {
+      "id": "65567",
+      "code": "A 24",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65567",
+      "available": false
+    },
+    {
+      "id": "65719",
+      "code": "A 25",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65719",
+      "available": false
+    },
+    {
+      "id": "64771",
+      "code": "A 26",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64771",
+      "available": false
+    },
+    {
+      "id": "65631",
+      "code": "A 27",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65631",
+      "available": false
+    },
+    {
+      "id": "65547",
+      "code": "A 28",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65547",
+      "available": false
+    },
+    {
+      "id": "65550",
+      "code": "A 29",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65550",
+      "available": false
+    },
+    {
+      "id": "65494",
+      "code": "A 30",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65494",
+      "available": false
+    },
+    {
+      "id": "65345",
+      "code": "A 31",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65345",
+      "available": false
+    },
+    {
+      "id": "65473",
+      "code": "A 32",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65473",
+      "available": false
+    },
+    {
+      "id": "65546",
+      "code": "A 33",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65546",
+      "available": false
+    },
+    {
+      "id": "64612",
+      "code": "A 34",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64612",
+      "available": false
+    },
+    {
+      "id": "64515",
+      "code": "A 35",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64515",
+      "available": false
+    },
+    {
+      "id": "65264",
+      "code": "A 36",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65264",
+      "available": false
+    },
+    {
+      "id": "65553",
+      "code": "A 37",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65553",
+      "available": false
+    },
+    {
+      "id": "64518",
+      "code": "A 38",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64518",
+      "available": false
+    },
+    {
+      "id": "64951",
+      "code": "A 39",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64951",
+      "available": false
+    },
+    {
+      "id": "64415",
+      "code": "A 40",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64415",
+      "available": false
+    },
+    {
+      "id": "65266",
+      "code": "A 41",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65266",
+      "available": false
+    },
+    {
+      "id": "64414",
+      "code": "A 42",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64414",
+      "available": false
+    },
+    {
+      "id": "64581",
+      "code": "A 43",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64581",
+      "available": false
+    },
+    {
+      "id": "64737",
+      "code": "A 44",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64737",
+      "available": false
+    },
+    {
+      "id": "65425",
+      "code": "BT 1",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65425",
+      "available": false
+    },
+    {
+      "id": "87306",
+      "code": "BT 2",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=87306",
+      "available": false
+    },
+    {
+      "id": "64699",
+      "code": "T 1",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64699",
+      "available": false
+    },
+    {
+      "id": "64921",
+      "code": "T 2",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64921",
+      "available": false
+    },
+    {
+      "id": "64540",
+      "code": "T 3",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64540",
+      "available": false
+    },
+    {
+      "id": "64613",
+      "code": "T 4",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64613",
+      "available": false
+    },
+    {
+      "id": "65046",
+      "code": "T 5",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65046",
+      "available": false
+    },
+    {
+      "id": "64924",
+      "code": "T 6",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64924",
+      "available": false
+    },
+    {
+      "id": "64876",
+      "code": "T 7",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64876",
+      "available": false
+    },
+    {
+      "id": "65163",
+      "code": "T 8",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65163",
+      "available": false
+    },
+    {
+      "id": "64615",
+      "code": "T 9",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64615",
+      "available": false
+    },
+    {
+      "id": "64925",
+      "code": "T 11",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64925",
+      "available": false
+    },
+    {
+      "id": "64736",
+      "code": "T 12",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64736",
+      "available": false
+    },
+    {
+      "id": "65159",
+      "code": "T 13",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65159",
+      "available": false
+    },
+    {
+      "id": "64702",
+      "code": "T 14",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64702",
+      "available": false
+    },
+    {
+      "id": "64770",
+      "code": "T 15",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64770",
+      "available": false
+    },
+    {
+      "id": "65142",
+      "code": "T 16",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65142",
+      "available": false
+    },
+    {
+      "id": "64883",
+      "code": "T 17",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64883",
+      "available": false
+    },
+    {
+      "id": "65039",
+      "code": "T 18",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65039",
+      "available": false
+    },
+    {
+      "id": "65157",
+      "code": "T 19",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65157",
+      "available": false
+    },
+    {
+      "id": "65141",
+      "code": "T 20",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65141",
+      "available": false
+    },
+    {
+      "id": "65160",
+      "code": "T 21",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65160",
+      "available": false
+    },
+    {
+      "id": "64742",
+      "code": "T 22",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64742",
+      "available": false
+    },
+    {
+      "id": "64972",
+      "code": "T 23",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64972",
+      "available": false
+    },
+    {
+      "id": "64829",
+      "code": "T 24",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64829",
+      "available": false
+    },
+    {
+      "id": "65238",
+      "code": "T 25",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65238",
+      "available": false
+    },
+    {
+      "id": "64701",
+      "code": "T 26",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64701",
+      "available": false
+    },
+    {
+      "id": "64741",
+      "code": "T 28",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64741",
+      "available": false
+    },
+    {
+      "id": "64765",
+      "code": "T 29",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64765",
+      "available": false
+    },
+    {
+      "id": "65038",
+      "code": "T 30",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65038",
+      "available": false
+    },
+    {
+      "id": "64743",
+      "code": "T 31",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64743",
+      "available": false
+    },
+    {
+      "id": "65161",
+      "code": "T 32",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65161",
+      "available": false
+    },
+    {
+      "id": "64730",
+      "code": "T 33",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64730",
+      "available": false
+    },
+    {
+      "id": "64541",
+      "code": "T 35",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64541",
+      "available": false
+    },
+    {
+      "id": "64700",
+      "code": "T 36",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64700",
+      "available": false
+    },
+    {
+      "id": "65162",
+      "code": "T 37",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65162",
+      "available": false
+    },
+    {
+      "id": "64732",
+      "code": "T 38",
+      "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64732",
+      "available": false
+    }
+  ]
+}

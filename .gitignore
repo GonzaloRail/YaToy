@@ -2,5 +2,7 @@ node_modules/
 dist/
 .env
 .env.local
+.env.import.local
+.cache/
 .agents/
 PLAN.md
