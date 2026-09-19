@@ -1,0 +1,30 @@
+{
+  "name": "yatoy",
+  "version": "1.0.0",
+  "description": "Prototipo académico de rastreo simulado de buses urbanos de Arequipa.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GonzaloRail/YaToy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GonzaloRail/YaToy/issues"
+  },
+  "homepage": "https://github.com/GonzaloRail/YaToy#readme",
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}

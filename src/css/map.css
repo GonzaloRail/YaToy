@@ -1,0 +1,11 @@
+.map-legend { position: absolute; z-index: 400; top: var(--space-3); left: var(--space-3); padding: var(--space-2) var(--space-3); background: rgb(255 255 255 / 0.95); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 4px 14px rgb(15 23 42 / 0.08); }
+.legend-title { margin: 0; font-size: 0.75rem; font-weight: 800; }
+.legend-list { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.legend-list li { display: inline-flex; align-items: center; gap: 5px; color: var(--color-muted); font-size: 0.75rem; font-weight: 700; }
+.bus-marker-wrapper { background: transparent; border: 0; }
+.bus-marker { display: grid; place-items: center; width: 42px; height: 28px; color: #fff; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.04em; background: var(--bus-color); border: 2px solid #fff; border-radius: 8px; box-shadow: 0 3px 8px rgb(15 23 42 / 0.28); }
+.bus-marker-wrapper.is-selected .bus-marker { outline: 3px solid #0f172a; outline-offset: 2px; }
+.leaflet-control-zoom a { width: 44px !important; height: 44px !important; line-height: 42px !important; color: var(--color-text) !important; }
+.leaflet-popup-content-wrapper { border-radius: 10px; }
+@media (min-width: 768px) { .map-legend { top: var(--space-4); left: var(--space-4); max-width: 280px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }

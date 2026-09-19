@@ -1,0 +1,27 @@
+.notice { display: flex; gap: var(--space-2); align-items: flex-start; margin: var(--space-4) 0; padding: var(--space-3); color: var(--color-notice-text); background: var(--color-notice); border-radius: var(--radius-md); }
+.notice svg { flex: 0 0 auto; width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+.notice p { margin: 0; font-size: 0.8125rem; }
+.field-group { display: grid; gap: 6px; margin-top: var(--space-3); }
+.field-group label { font-size: 0.875rem; font-weight: 700; }
+.field-group select { min-height: 46px; width: 100%; padding: 0 var(--space-3); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
+.secondary-button { min-height: 44px; width: 100%; margin-top: var(--space-3); padding: 0 var(--space-3); color: var(--color-primary); font-weight: 700; background: #fff; border: 1px solid var(--color-primary); border-radius: 10px; transition: background 160ms ease, color 160ms ease; }
+.secondary-button:hover { color: #fff; background: var(--color-primary); }
+.secondary-button svg { width: 18px; height: 18px; margin-right: var(--space-1); vertical-align: -4px; fill: none; stroke: currentColor; stroke-width: 2; }
+.secondary-button:disabled { cursor: progress; opacity: 0.65; }
+.icon-button { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; color: var(--color-primary); background: #eff6ff; border: 0; border-radius: 50%; }
+.icon-button svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; }
+.live-status, .bus-summary { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+.eta-card { margin-top: var(--space-5); padding: var(--space-4); background: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.eta-card h2 { margin: 0; font-size: 1rem; }
+.eta-card > p:not(.eyebrow) { margin: var(--space-2) 0 0; font-size: 0.875rem; }
+.eta-card .distance-message { color: var(--color-muted); font-size: 0.8125rem; }
+.live-status h2, .bus-summary h2 { font-size: 0.875rem; }
+.live-status p, .bus-summary > p { margin: var(--space-1) 0 0; color: var(--color-muted); font-size: 0.8125rem; }
+.live-indicator { display: inline-flex; align-items: center; gap: 6px; color: #166534; font-size: 0.75rem; font-weight: 700; }
+.bus-list, .legend-list { padding: 0; margin: var(--space-3) 0 0; list-style: none; }
+.bus-list { display: grid; gap: var(--space-2); }
+.bus-list li { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); background: #f8fafc; border-radius: 10px; }
+.bus-list strong, .bus-list small { display: block; }
+.bus-list strong { font-size: 0.875rem; }
+.bus-list small { color: var(--color-muted); font-size: 0.75rem; }
+.route-swatch { display: inline-block; flex: 0 0 auto; width: 11px; height: 11px; background: var(--route-color); border-radius: 50%; }

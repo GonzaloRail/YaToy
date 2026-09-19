@@ -1,0 +1,15 @@
+.app-shell { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+.app-header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.brand { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text); font-size: 1.125rem; font-weight: 800; text-decoration: none; }
+.brand-mark { display: grid; place-items: center; width: 32px; height: 32px; color: #fff; background: var(--color-primary); border-radius: 9px; }
+.simulation-badge { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--color-muted); font-size: 0.75rem; font-weight: 700; text-align: right; }
+.simulation-badge span, .live-indicator span { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
+.main-layout { position: relative; min-height: 0; }
+.map-region { height: calc(100dvh - 64px); min-height: 460px; }
+.map { width: 100%; height: 100%; }
+.control-panel { position: absolute; z-index: 500; right: 0; bottom: 0; left: 0; max-height: min(62dvh, 580px); overflow-y: auto; padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom)); background: var(--color-surface); border-radius: 22px 22px 0 0; box-shadow: var(--shadow-panel); }
+.panel-heading, .status-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.panel-heading h1, .bus-summary h2, .live-status h2 { margin: 0; }
+.panel-heading h1 { font-size: 1.375rem; line-height: 1.2; }
+.eyebrow { margin: 0 0 var(--space-1); color: var(--color-primary); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+@media (min-width: 768px) { .app-header { padding-inline: var(--space-5); } .control-panel { top: var(--space-4); right: var(--space-4); bottom: var(--space-4); left: auto; width: 360px; max-height: none; border-radius: var(--radius-lg); padding: var(--space-5); } .map-region { height: calc(100dvh - 64px); } }
