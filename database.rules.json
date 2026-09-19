@@ -1,0 +1,48 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "empresas": {
+      ".read": true,
+      ".write": false
+    },
+    "rutas": {
+      ".read": true,
+      ".write": false
+    },
+    "buses": {
+      ".read": true,
+      ".write": false
+    },
+    "posicionesBuses": {
+      ".read": true,
+      ".write": false,
+      "$busId": {
+        ".validate": "!newData.exists() || (newData.hasChildren(['rutaId', 'indiceSegmento', 'progreso', 'lat', 'lng', 'actualizadoEn']) && newData.child('rutaId').isString() && newData.child('indiceSegmento').isNumber() && newData.child('indiceSegmento').val() >= 0 && newData.child('progreso').isNumber() && newData.child('progreso').val() >= 0 && newData.child('progreso').val() < 1 && newData.child('lat').isNumber() && newData.child('lat').val() >= -90 && newData.child('lat').val() <= 90 && newData.child('lng').isNumber() && newData.child('lng').val() >= -180 && newData.child('lng').val() <= 180 && newData.child('actualizadoEn').isNumber())"
+      }
+    },
+    "simulacion": {
+      ".read": true,
+      ".write": false
+    },
+    "usuarios": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "favoritos": {
+          "rutas": {
+            "$routeId": { ".validate": "newData.isBoolean()" }
+          },
+          "paraderos": {
+            "$stopId": { ".validate": "newData.isBoolean()" }
+          }
+        },
+        "historial": {
+          "$searchId": {
+            ".validate": "!newData.exists() || (newData.hasChildren(['rutaId', 'busId', 'paraderoId', 'buscadoEn']) && newData.child('rutaId').isString() && newData.child('busId').isString() && newData.child('paraderoId').isString() && newData.child('buscadoEn').isNumber())"
+          }
+        }
+      }
+    }
+  }
+}

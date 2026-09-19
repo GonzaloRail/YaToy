@@ -1,0 +1,35 @@
+{
+  "empresas": {
+    "empresaA": { "nombre": "Empresa A", "rutaId": "c2", "buses": { "busA1": true, "busA2": true } },
+    "empresaB": { "nombre": "Empresa B", "rutaId": "troncal1", "buses": { "busB1": true, "busB2": true, "busB3": true, "busB4": true, "busB5": true } },
+    "empresaC": { "nombre": "Empresa C", "rutaId": "c10", "buses": { "busC1": true, "busC2": true } }
+  },
+  "rutas": {
+    "c2": {
+      "codigo": "C-2", "nombre": "Ruta C-2", "color": "#2563eb", "esAproximada": true, "segundosPorSegmento": 90,
+      "puntos": [[-16.379, -71.535], [-16.383, -71.539], [-16.389, -71.542], [-16.396, -71.541], [-16.401, -71.54], [-16.405, -71.536], [-16.401, -71.532], [-16.395, -71.531], [-16.389, -71.532], [-16.383, -71.533]],
+      "paraderos": { "rio-seco": { "nombre": "Terminal Río Seco", "indicePunto": 0 }, "ejercito": { "nombre": "Av. Ejército", "indicePunto": 3 }, "plaza-armas-c2": { "nombre": "Plaza de Armas", "indicePunto": 6 } }
+    },
+    "troncal1": {
+      "codigo": "Troncal 1", "nombre": "Ruta Troncal 1", "color": "#ea580c", "esAproximada": true, "segundosPorSegmento": 90,
+      "puntos": [[-16.429, -71.521], [-16.423, -71.525], [-16.417, -71.529], [-16.411, -71.533], [-16.405, -71.537], [-16.398, -71.538], [-16.391, -71.538], [-16.384, -71.537], [-16.378, -71.534], [-16.383, -71.53], [-16.39, -71.529], [-16.398, -71.531], [-16.406, -71.529], [-16.414, -71.525], [-16.422, -71.52]],
+      "paraderos": { "paucarpata": { "nombre": "Paucarpata", "indicePunto": 0 }, "centro-civico": { "nombre": "Centro Cívico", "indicePunto": 5 }, "cayma": { "nombre": "Cayma", "indicePunto": 8 }, "yanahuara": { "nombre": "Yanahuara", "indicePunto": 11 } }
+    },
+    "c10": {
+      "codigo": "C-10", "nombre": "Ruta C-10", "color": "#0891b2", "esAproximada": true, "segundosPorSegmento": 90,
+      "puntos": [[-16.419, -71.551], [-16.414, -71.547], [-16.409, -71.544], [-16.403, -71.54], [-16.398, -71.536], [-16.396, -71.531], [-16.399, -71.526], [-16.405, -71.524], [-16.412, -71.526], [-16.419, -71.531], [-16.422, -71.538], [-16.422, -71.546]],
+      "paraderos": { "hunter": { "nombre": "Jacobo Hunter", "indicePunto": 0 }, "plaza-armas-c10": { "nombre": "Plaza de Armas", "indicePunto": 4 }, "mariano-melgar": { "nombre": "Mariano Melgar", "indicePunto": 8 } }
+    }
+  },
+  "buses": {
+    "busA1": { "nombre": "Bus A1", "empresaId": "empresaA", "rutaId": "c2", "activo": true }, "busA2": { "nombre": "Bus A2", "empresaId": "empresaA", "rutaId": "c2", "activo": true },
+    "busB1": { "nombre": "Bus B1", "empresaId": "empresaB", "rutaId": "troncal1", "activo": true }, "busB2": { "nombre": "Bus B2", "empresaId": "empresaB", "rutaId": "troncal1", "activo": true }, "busB3": { "nombre": "Bus B3", "empresaId": "empresaB", "rutaId": "troncal1", "activo": true }, "busB4": { "nombre": "Bus B4", "empresaId": "empresaB", "rutaId": "troncal1", "activo": true }, "busB5": { "nombre": "Bus B5", "empresaId": "empresaB", "rutaId": "troncal1", "activo": true },
+    "busC1": { "nombre": "Bus C1", "empresaId": "empresaC", "rutaId": "c10", "activo": true }, "busC2": { "nombre": "Bus C2", "empresaId": "empresaC", "rutaId": "c10", "activo": true }
+  },
+  "posicionesBuses": {
+    "busA1": { "rutaId": "c2", "indiceSegmento": 0, "progreso": 0, "lat": -16.379, "lng": -71.535, "actualizadoEn": 0 }, "busA2": { "rutaId": "c2", "indiceSegmento": 5, "progreso": 0, "lat": -16.405, "lng": -71.536, "actualizadoEn": 0 },
+    "busB1": { "rutaId": "troncal1", "indiceSegmento": 0, "progreso": 0, "lat": -16.429, "lng": -71.521, "actualizadoEn": 0 }, "busB2": { "rutaId": "troncal1", "indiceSegmento": 3, "progreso": 0, "lat": -16.411, "lng": -71.533, "actualizadoEn": 0 }, "busB3": { "rutaId": "troncal1", "indiceSegmento": 6, "progreso": 0, "lat": -16.391, "lng": -71.538, "actualizadoEn": 0 }, "busB4": { "rutaId": "troncal1", "indiceSegmento": 9, "progreso": 0, "lat": -16.383, "lng": -71.53, "actualizadoEn": 0 }, "busB5": { "rutaId": "troncal1", "indiceSegmento": 12, "progreso": 0, "lat": -16.406, "lng": -71.529, "actualizadoEn": 0 },
+    "busC1": { "rutaId": "c10", "indiceSegmento": 0, "progreso": 0, "lat": -16.419, "lng": -71.551, "actualizadoEn": 0 }, "busC2": { "rutaId": "c10", "indiceSegmento": 6, "progreso": 0, "lat": -16.399, "lng": -71.526, "actualizadoEn": 0 }
+  },
+  "simulacion": { "control": { "activa": false, "intervaloMs": 3000, "ultimaActualizacion": 0 } }
+}

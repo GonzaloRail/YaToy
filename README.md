@@ -74,3 +74,29 @@ La ubicación se solicita únicamente al presionar `Usar mi ubicación`. Se usa 
 ## Plan del proyecto
 
 Consulta [`PLAN.md`](./PLAN.md) para ver las fases, criterios de aceptación, modelo de datos futuro, seguridad Firebase y el registro de avance.
+
+## Firebase
+
+El proyecto Firebase configurado para este prototipo es `yatoy-arequipa-2026`. La Realtime Database usa la instancia predeterminada en `us-central1`.
+
+### Activación manual de Authentication
+
+Antes de implementar el login, abre la [consola de Authentication](https://console.firebase.google.com/project/yatoy-arequipa-2026/authentication/providers), pulsa **Get started**, activa **Email/Password**, habilita la primera opción y guarda los cambios.
+
+### Datos y reglas
+
+- `data/seed-data.json` contiene empresas, rutas, buses y posiciones iniciales.
+- `database.rules.json` expone lectura de información pública del mapa, deniega todas las escrituras públicas y aísla `usuarios/{uid}` por cuenta autenticada.
+- `.env.local` contiene la configuración local de Firebase y está ignorado por Git.
+- `.env.example` sirve como plantilla para otros entornos.
+
+Para publicar reglas y restaurar los datos iniciales con Node 24:
+
+```bash
+eval "$(fnm env)"
+fnm use 24
+npx -y firebase-tools@latest deploy --only database --project yatoy-arequipa-2026
+npx -y firebase-tools@latest database:set / data/seed-data.json --project yatoy-arequipa-2026 --force
+```
+
+> El segundo comando reemplaza toda la base de datos. Úsalo únicamente para restaurar el estado académico inicial.
