@@ -61,6 +61,7 @@ async function loadStates() {
       ...bus,
       segmentIndex: position.indiceSegmento,
       progress: position.progreso,
+      distanceMeters: position.distanciaMetros ?? routes[bus.routeId].cumulativeDistances?.[position.indiceSegmento] ?? 0,
       lat: position.lat,
       lng: position.lng,
     }];
@@ -95,6 +96,7 @@ async function writePositions() {
       rutaId: state.routeId,
       indiceSegmento: state.segmentIndex,
       progreso: state.progress,
+      distanciaMetros: state.distanceMeters ?? null,
       lat: state.lat,
       lng: state.lng,
       actualizadoEn: serverTimestamp(),
