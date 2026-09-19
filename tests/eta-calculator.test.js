@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateEtaSeconds, calculateSegmentsRemaining, formatEta } from "../src/js/core/eta-calculator.js";
+import { calculateDistanceAhead, calculateDistanceEtaSeconds, calculateEtaSeconds, calculateSegmentsRemaining, formatEta } from "../src/js/core/eta-calculator.js";
 
 describe("cálculo de ETA", () => {
   it("calcula segmentos hasta un paradero adelante", () => {
@@ -20,5 +20,12 @@ describe("cálculo de ETA", () => {
 
   it("redondea minutos de llegada hacia arriba", () => {
     expect(formatEta(121)).toBe("Llega en aproximadamente 3 min");
+  });
+
+  it("calcula ETA por metros y cierra el recorrido", () => {
+    const route = { totalDistanceMeters: 1_000, speedMetersPerSecond: 5 };
+    const stop = { distanceMeters: 100 };
+    expect(calculateDistanceAhead(900, 100, 1_000)).toBe(200);
+    expect(calculateDistanceEtaSeconds({ distanceMeters: 900 }, stop, route)).toBe(40);
   });
 });

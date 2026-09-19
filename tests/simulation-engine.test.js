@@ -39,4 +39,18 @@ describe("motor de simulación", () => {
     expect(result.lat).toBeCloseTo(5);
     expect(result.lng).toBeCloseTo(10);
   });
+
+  it("avanza una ruta por metros y conserva el punto vial correcto", () => {
+    const distanceRoute = {
+      points: [[0, 0], [0, 1], [0, 2]],
+      cumulativeDistances: [0, 100, 200],
+      totalDistanceMeters: 200,
+      speedMetersPerSecond: 10,
+    };
+    const result = advanceBus({ routeId: "distance", distanceMeters: 95 }, distanceRoute, 1_000);
+    expect(result.distanceMeters).toBe(105);
+    expect(result.segmentIndex).toBe(1);
+    expect(result.progress).toBeCloseTo(0.05);
+    expect(result.lng).toBeCloseTo(1.05);
+  });
 });
