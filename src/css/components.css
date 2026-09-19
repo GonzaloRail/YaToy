@@ -1,6 +1,14 @@
 .notice { display: flex; gap: var(--space-2); align-items: flex-start; margin: var(--space-4) 0; padding: var(--space-3); color: var(--color-notice-text); background: var(--color-notice); border-radius: var(--radius-md); }
 .notice svg { flex: 0 0 auto; width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
 .notice p { margin: 0; font-size: 0.8125rem; }
+.catalog { margin: var(--space-4) 0; }
+.catalog h2 { margin: 0; font-size: 1rem; }
+.catalog input { min-height: 46px; width: 100%; margin-top: var(--space-2); padding: 0 var(--space-3); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
+.catalog-feedback { min-height: 1.4em; margin: var(--space-2) 0 0; color: var(--color-muted); font-size: 0.75rem; }
+.catalog-list { display: grid; max-height: 190px; gap: var(--space-2); padding: 0; margin: var(--space-2) 0 0; overflow-y: auto; list-style: none; }
+.catalog-list button { width: 100%; min-height: 42px; padding: var(--space-2) var(--space-3); color: var(--color-text); font-size: 0.8125rem; font-weight: 700; text-align: left; background: #f8fafc; border: 1px solid var(--color-border); border-radius: 8px; }
+.catalog-list button.is-available { color: var(--color-primary); border-color: #93c5fd; }
+.catalog-list button:disabled { cursor: not-allowed; color: var(--color-muted); opacity: 0.7; }
 .field-group { display: grid; gap: 6px; margin-top: var(--space-3); }
 .field-group label { font-size: 0.875rem; font-weight: 700; }
 .field-group select { min-height: 46px; width: 100%; padding: 0 var(--space-3); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
@@ -21,6 +29,7 @@
 .eta-card h2 { margin: 0; font-size: 1rem; }
 .eta-card > p:not(.eyebrow) { margin: var(--space-2) 0 0; font-size: 0.875rem; }
 .eta-card .distance-message { color: var(--color-muted); font-size: 0.8125rem; }
+.location-help { min-height: 1.5em; margin: var(--space-2) 0 0; color: var(--color-muted); font-size: 0.8125rem; }
 .user-data { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
 .user-data h2 { margin: 0; font-size: 1rem; }
 .user-data h3 { margin: var(--space-4) 0 var(--space-2); font-size: 0.8125rem; }

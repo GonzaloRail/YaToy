@@ -1,4 +1,9 @@
 .app-shell { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+.auth-gate { display: grid; min-height: 100dvh; place-items: center; padding: var(--space-4); background: #eff6ff; }
+.auth-gate-card { width: min(100%, 440px); padding: var(--space-6); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-panel); }
+.auth-gate-card .brand-mark { margin-bottom: var(--space-5); }
+.auth-gate-card h1 { margin: 0; font-size: clamp(1.75rem, 8vw, 2.5rem); line-height: 1.08; }
+.auth-gate-card > p:not(.eyebrow) { color: var(--color-muted); }
 .app-header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .brand { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text); font-size: 1.125rem; font-weight: 800; text-decoration: none; }
 .brand-mark { display: grid; place-items: center; width: 32px; height: 32px; color: #fff; background: var(--color-primary); border-radius: 9px; }
@@ -9,10 +14,15 @@
 .main-layout { position: relative; min-height: 0; }
 .map-region { height: calc(100dvh - 64px); min-height: 460px; }
 .map { width: 100%; height: 100%; }
-.control-panel { position: absolute; z-index: 500; right: 0; bottom: 0; left: 0; max-height: min(62dvh, 580px); overflow-y: auto; padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom)); background: var(--color-surface); border-radius: 22px 22px 0 0; box-shadow: var(--shadow-panel); }
+.control-panel { position: absolute; z-index: 500; right: 0; bottom: 0; left: 0; height: min(58dvh, 580px); overflow-y: auto; padding: var(--space-2) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom)); background: var(--color-surface); border-radius: 22px 22px 0 0; box-shadow: var(--shadow-panel); transition: height 180ms ease, transform 180ms ease; overscroll-behavior: contain; }
+.sheet-handle-row { display: grid; place-items: center; min-height: 32px; margin: 0 calc(var(--space-4) * -1) var(--space-2); touch-action: none; }
+.sheet-handle { display: grid; place-items: center; width: 100%; min-height: 32px; background: transparent; border: 0; }
+.sheet-handle span { width: 42px; height: 5px; background: #94a3b8; border-radius: 999px; }
+.control-panel[data-sheet="collapsed"] { height: 70px; overflow: hidden; }
+.control-panel[data-sheet="expanded"] { height: calc(100dvh - 64px); }
 .panel-heading, .status-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
 .panel-heading h1, .bus-summary h2, .live-status h2 { margin: 0; }
 .panel-heading h1 { font-size: 1.375rem; line-height: 1.2; }
 .eyebrow { margin: 0 0 var(--space-1); color: var(--color-primary); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 @media (max-width: 420px) { .session-actions span { display: none; } }
-@media (min-width: 768px) { .app-header { padding-inline: var(--space-5); } .control-panel { top: var(--space-4); right: var(--space-4); bottom: var(--space-4); left: auto; width: 360px; max-height: none; border-radius: var(--radius-lg); padding: var(--space-5); } .map-region { height: calc(100dvh - 64px); } }
+@media (min-width: 768px) { .app-header { padding-inline: var(--space-5); } .control-panel { top: var(--space-4); right: var(--space-4); bottom: var(--space-4); left: auto; width: 360px; height: auto; max-height: none; border-radius: var(--radius-lg); padding: var(--space-5); } .sheet-handle-row { display: none; } .map-region { height: calc(100dvh - 64px); } }

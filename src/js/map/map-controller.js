@@ -12,6 +12,8 @@ export class MapController {
     this.userAccuracyCircle = null;
     this.selectedStop = null;
     this.stopSelectionHandler = null;
+    this.userLocationHandler = null;
+    this.isChoosingLocation = false;
     this.routeBounds = L.latLngBounds([]);
 
     L.control.zoom({ position: "bottomright" }).addTo(this.map);
@@ -23,6 +25,9 @@ export class MapController {
     this.drawRoutes();
     this.createBusMarkers();
     this.fitRoutes();
+    this.map.on("click", (event) => {
+      if (this.isChoosingLocation) this.userLocationHandler?.({ lat: event.latlng.lat, lng: event.latlng.lng, accuracy: 20 });
+    });
   }
 
   drawRoutes() {
@@ -33,7 +38,7 @@ export class MapController {
         opacity: 0.85,
         lineCap: "round",
         lineJoin: "round",
-      }).bindTooltip(`${route.code} · trazado aproximado`, { sticky: true });
+      }).bindTooltip(`${route.code} · ${route.esAproximada ? "trazado aproximado" : "recorrido vial importado"}`, { sticky: true });
       polyline.addTo(this.map);
       this.routeLayers.set(route.id, polyline);
       this.routeBounds.extend(polyline.getBounds());
@@ -59,9 +64,9 @@ export class MapController {
       const route = this.routes[bus.routeId];
       const icon = L.divIcon({
         className: "bus-marker-wrapper",
-        html: `<span class="bus-marker" style="--bus-color: ${route.color}" aria-hidden="true">BUS</span>`,
-        iconSize: [42, 30],
-        iconAnchor: [21, 15],
+        html: `<span class="bus-marker" style="--bus-color: ${route.color}" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 4h18a3 3 0 0 1 3 3v16H4V7a3 3 0 0 1 3-3Zm1 5v7h16V9H8Zm2 17a3 3 0 0 0-6 0h6Zm18 0a3 3 0 0 0-6 0h6ZM8 20h2v2H8v-2Zm14 0h2v2h-2v-2Z"/></svg><b>${route.code}</b></span>`,
+        iconSize: [38, 38],
+        iconAnchor: [19, 19],
       });
       const marker = L.marker([0, 0], { icon, keyboard: true, title: `${bus.name}, ${route.code}` })
         .bindPopup(`<strong>${bus.name}</strong><br>${route.code}<br><small>Posición simulada</small>`)
@@ -107,6 +112,20 @@ export class MapController {
     this.stopSelectionHandler = handler;
   }
 
+  setUserLocationHandler(handler) {
+    this.userLocationHandler = handler;
+  }
+
+  beginLocationSelection() {
+    this.isChoosingLocation = true;
+    this.map.getContainer().classList.add("is-choosing-location");
+  }
+
+  endLocationSelection() {
+    this.isChoosingLocation = false;
+    this.map.getContainer().classList.remove("is-choosing-location");
+  }
+
   highlightStop(routeId, stopId) {
     this.stopLayers.forEach((stops, currentRouteId) => {
       stops.forEach(({ stop, marker }) => {
@@ -121,13 +140,19 @@ export class MapController {
   showUserLocation(location) {
     const latLng = [location.lat, location.lng];
     if (!this.userMarker) {
-      this.userMarker = L.circleMarker(latLng, {
-        radius: 8,
-        color: "#ffffff",
-        weight: 3,
-        fillColor: "#0f172a",
-        fillOpacity: 1,
-      }).bindTooltip("Tu ubicación", { direction: "top" }).addTo(this.map);
+      const icon = L.divIcon({
+        className: "user-marker-wrapper",
+        html: '<span class="user-marker" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 10.2A3.2 3.2 0 1 1 12 5.8a3.2 3.2 0 0 1 0 6.4Z"/></svg></span>',
+        iconSize: [36, 44],
+        iconAnchor: [18, 40],
+      });
+      this.userMarker = L.marker(latLng, { icon, draggable: true, autoPan: true, title: "Tu ubicación" })
+        .bindTooltip("Tu ubicación", { direction: "top" })
+        .addTo(this.map);
+      this.userMarker.on("dragend", () => {
+        const point = this.userMarker.getLatLng();
+        this.userLocationHandler?.({ lat: point.lat, lng: point.lng, accuracy: 20 });
+      });
       this.userAccuracyCircle = L.circle(latLng, { radius: location.accuracy, color: "#0f172a", weight: 1, fillColor: "#64748b", fillOpacity: 0.12 }).addTo(this.map);
       return;
     }

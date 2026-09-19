@@ -4,7 +4,7 @@ import { APP_CONFIG } from "./config/app-config.js";
 import { buses } from "./data/buses.js";
 import { companies } from "./data/companies.js";
 import { routes } from "./data/routes.js";
-import { calculateEtaSeconds, formatEta } from "./core/eta-calculator.js";
+import { calculateDistanceEtaSeconds, calculateEtaSeconds, formatEta } from "./core/eta-calculator.js";
 import { calculateDistanceMeters, formatDistance } from "./core/geo-utils.js";
 import { validateNetwork } from "./core/validators.js";
 import { getAuthErrorMessage, loginUser, logoutUser, observeAuthState, registerUser } from "./firebase/auth-service.js";
@@ -45,6 +45,17 @@ const authFeedback = document.querySelector("#auth-feedback");
 const sessionActions = document.querySelector("#session-actions");
 const sessionName = document.querySelector("#session-name");
 const logoutButton = document.querySelector("#logout");
+const authGate = document.querySelector("#auth-gate");
+const authenticatedApp = document.querySelector("#authenticated-app");
+const openAuthGateButton = document.querySelector("#open-auth-gate");
+const controlPanel = document.querySelector("#control-panel");
+const sheetToggle = document.querySelector("#sheet-toggle");
+const chooseLocationButton = document.querySelector("#choose-location");
+const confirmLocationButton = document.querySelector("#confirm-location");
+const locationHelp = document.querySelector("#location-help");
+const routeSearch = document.querySelector("#route-search");
+const catalogList = document.querySelector("#catalog-list");
+const catalogFeedback = document.querySelector("#catalog-feedback");
 const userData = document.querySelector("#user-data");
 const favoriteRouteButton = document.querySelector("#favorite-route");
 const favoriteStopButton = document.querySelector("#favorite-stop");
@@ -60,6 +71,10 @@ let unsubscribeFavorites = null;
 let unsubscribeHistory = null;
 let lastSearchKey = null;
 let lastSearchAt = 0;
+let mapController = null;
+let positionSource = null;
+let appInitialized = false;
+let routeCatalog = [];
 
 populateRouteSelector(routeSelect, routes);
 populateBusSelector(busSelect, buses, routes, "all");
@@ -70,17 +85,54 @@ Object.values(routes).forEach((route) => {
   routeLegend.append(item);
 });
 
-const mapController = new MapController({
-  elementId: "map",
-  center: APP_CONFIG.mapCenter,
-  zoom: APP_CONFIG.mapInitialZoom,
-  routes,
-  buses,
-});
+function initializeAuthenticatedApp() {
+  if (appInitialized) return;
+  mapController = new MapController({
+    elementId: "map",
+    center: APP_CONFIG.mapCenter,
+    zoom: APP_CONFIG.mapInitialZoom,
+    routes,
+    buses,
+  });
+  mapController.setStopSelectionHandler(selectStop);
+  mapController.setUserLocationHandler(setUserLocation);
+  positionSource = APP_CONFIG.positionSource === "firebase"
+    ? new FirebasePositionSource()
+    : new LocalPositionSource({ routes, buses, intervalMs: APP_CONFIG.simulationIntervalMs });
+  positionSource.subscribe((positions, updatedAt) => {
+    latestPositions = positions;
+    mapController?.updatePositions(positions);
+    if (APP_CONFIG.positionSource === "firebase" && !updatedAt) {
+      lastUpdate.textContent = "Esperando que el administrador inicie la simulación.";
+    } else {
+      const sourceLabel = APP_CONFIG.positionSource === "firebase" ? "sincronizada" : "local";
+      lastUpdate.textContent = `Última actualización ${sourceLabel}: ${formatUpdateTime(updatedAt)}`;
+    }
+    updateEta();
+  });
+  positionSource.subscribeStatus?.(({ connected, updatedAt, error }) => {
+    const isStale = updatedAt > 0 && Date.now() - updatedAt > APP_CONFIG.stalePositionMs;
+    liveIndicator.textContent = error || !connected ? "Sin conexión" : isStale ? "Datos desactualizados" : "Activa";
+    liveIndicator.classList.toggle("is-warning", isStale);
+    liveIndicator.classList.toggle("is-offline", Boolean(error) || !connected);
+  });
+  positionSource.start();
+  appInitialized = true;
+  applySelection();
+  void loadRouteCatalog();
+}
 
-const positionSource = APP_CONFIG.positionSource === "firebase"
-  ? new FirebasePositionSource()
-  : new LocalPositionSource({ routes, buses, intervalMs: APP_CONFIG.simulationIntervalMs });
+function teardownAuthenticatedApp() {
+  if (!appInitialized) return;
+  positionSource?.stop();
+  mapController?.map.remove();
+  document.querySelector("#map").replaceChildren();
+  mapController = null;
+  positionSource = null;
+  latestPositions = {};
+  userLocation = null;
+  appInitialized = false;
+}
 
 function visibleBuses() {
   return Object.values(buses).filter((bus) =>
@@ -102,9 +154,9 @@ function updateBusSummary() {
 }
 
 function applySelection({ focusBus = false } = {}) {
-  mapController.applyFilter(routeSelect.value, busSelect.value);
+  mapController?.applyFilter(routeSelect.value, busSelect.value);
   updateBusSummary();
-  if (focusBus && busSelect.value !== "all") mapController.focusBus(busSelect.value);
+  if (focusBus && busSelect.value !== "all") mapController?.focusBus(busSelect.value);
   updateEta();
   updateFavoriteControls();
 }
@@ -115,13 +167,37 @@ function getSelectedRoute() {
 
 function updateEta() {
   const route = getSelectedRoute();
-  const stop = findStop(route, stopSelect.value);
-  const busPosition = latestPositions[busSelect.value];
-  if (!route || busSelect.value === "all" || !stop || !busPosition) {
+  let stop = findStop(route, stopSelect.value);
+  if (userLocation && route) {
+    const routeDistance = Math.min(...route.points.map(([lat, lng]) => calculateDistanceMeters(userLocation, { lat, lng })));
+    if (routeDistance > 400) {
+      etaMessage.textContent = `Estás a ${formatDistance(routeDistance)} del recorrido ${route.code}.`;
+      distanceMessage.textContent = "Puedes ver la ruta y sus buses, pero no hay un paradero cercano para estimar llegada.";
+      return;
+    }
+    if (!stop) {
+      stop = route.stops.reduce((closest, candidate) => {
+        const [lat, lng] = route.points[candidate.pointIndex];
+        const [closestLat, closestLng] = route.points[closest.pointIndex];
+        return calculateDistanceMeters(userLocation, { lat, lng }) < calculateDistanceMeters(userLocation, { lat: closestLat, lng: closestLng }) ? candidate : closest;
+      });
+      stopSelect.value = stop.id;
+      mapController?.highlightStop(route.id, stop.id);
+    }
+  }
+  const routeBusIds = Object.values(buses).filter((bus) => bus.routeId === route?.id && latestPositions[bus.id]);
+  const candidateBusIds = busSelect.value === "all" ? routeBusIds.map((bus) => bus.id) : [busSelect.value];
+  if (!route || !stop || !candidateBusIds.length) {
     etaMessage.textContent = "Selecciona una ruta, un bus y un paradero para ver el ETA.";
   } else {
-    const etaSeconds = calculateEtaSeconds(busPosition, stop.pointIndex, route.points.length, route.secondsPerSegment);
-    etaMessage.textContent = `${buses[busSelect.value].name}: ${formatEta(etaSeconds)}.`;
+    const nextBus = candidateBusIds.map((busId) => {
+      const position = latestPositions[busId];
+      const etaSeconds = route.totalDistanceMeters
+        ? calculateDistanceEtaSeconds(position, stop, route)
+        : calculateEtaSeconds(position, stop.pointIndex, route.points.length, route.secondsPerSegment);
+      return { busId, etaSeconds };
+    }).sort((first, second) => first.etaSeconds - second.etaSeconds)[0];
+    etaMessage.textContent = `${buses[nextBus.busId].name}: ${formatEta(nextBus.etaSeconds)}.`;
   }
 
   if (!userLocation || !route || !stop) {
@@ -131,6 +207,47 @@ function updateEta() {
   const [lat, lng] = route.points[stop.pointIndex];
   distanceMessage.textContent = `Estás a ${formatDistance(calculateDistanceMeters(userLocation, { lat, lng }))} del paradero.`;
 }
+
+async function loadRouteCatalog() {
+  if (routeCatalog.length) return;
+  try {
+    const response = await fetch("./data/routes/catalog.json");
+    if (!response.ok) throw new Error("No se pudo cargar el catálogo.");
+    const catalog = await response.json();
+    routeCatalog = catalog.routes ?? [];
+    renderCatalog();
+  } catch (error) {
+    catalogFeedback.textContent = "No se pudo cargar el catálogo de rutas.";
+  }
+}
+
+function renderCatalog() {
+  const term = routeSearch.value.trim().toLowerCase();
+  const visible = routeCatalog.filter((route) => route.code.toLowerCase().includes(term)).slice(0, 30);
+  catalogList.replaceChildren();
+  visible.forEach((catalogRoute) => {
+    const localRoute = Object.values(routes).find((route) => route.code === catalogRoute.code);
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = localRoute ? `${catalogRoute.code} · recorrido disponible` : `${catalogRoute.code} · pendiente de importar`;
+    button.disabled = !localRoute;
+    button.classList.toggle("is-available", Boolean(localRoute));
+    button.addEventListener("click", () => {
+      routeSelect.value = localRoute.id;
+      populateBusSelector(busSelect, buses, routes, localRoute.id);
+      populateStopSelector(stopSelect, localRoute);
+      applySelection();
+      mapController?.fitRoutes();
+      catalogFeedback.textContent = `${catalogRoute.code} cargada desde WikiRoutes.`;
+    });
+    item.append(button);
+    catalogList.append(item);
+  });
+  if (!visible.length) catalogFeedback.textContent = "No se encontraron rutas con ese código.";
+}
+
+routeSearch.addEventListener("input", renderCatalog);
 
 function getSelectedStop() {
   return findStop(getSelectedRoute(), stopSelect.value);
@@ -243,7 +360,7 @@ function selectStop(routeId, stopId) {
     populateStopSelector(stopSelect, routes[routeId]);
   }
   stopSelect.value = stopId;
-  mapController.highlightStop(routeId, stopId);
+  mapController?.highlightStop(routeId, stopId);
   applySelection();
   void maybeRecordSearch();
   liveRegion.textContent = `Paradero seleccionado: ${findStop(routes[routeId], stopId).name}.`;
@@ -265,7 +382,7 @@ stopSelect.addEventListener("change", () => {
     updateEta();
     return;
   }
-  mapController.highlightStop(route.id, stopSelect.value);
+  mapController?.highlightStop(route.id, stopSelect.value);
   updateEta();
   void maybeRecordSearch();
 });
@@ -307,14 +424,23 @@ clearHistoryButton.addEventListener("click", async () => {
   }
 });
 
+function setUserLocation(location) {
+  userLocation = location;
+  mapController?.showUserLocation(location);
+  updateEta();
+  confirmLocationButton.hidden = false;
+  locationHelp.textContent = "Puedes arrastrar el pin para ajustar la ubicación y luego confirmarla.";
+}
+
 locateUserButton.addEventListener("click", async () => {
   locateUserButton.disabled = true;
   locateUserButton.textContent = "Buscando ubicación...";
   try {
-    userLocation = await getCurrentLocation();
-    mapController.showUserLocation(userLocation);
-    mapController.focusUserLocation();
-    updateEta();
+    setUserLocation(await getCurrentLocation());
+    mapController?.focusUserLocation();
+    mapController?.endLocationSelection();
+    confirmLocationButton.hidden = true;
+    locationHelp.textContent = "Ubicación del dispositivo activada. Puedes cambiarla eligiendo un punto en el mapa.";
     liveRegion.textContent = "Ubicación actualizada. Solo se usa en este navegador.";
   } catch (error) {
     liveRegion.textContent = error.message;
@@ -325,11 +451,55 @@ locateUserButton.addEventListener("click", async () => {
   }
 });
 
-openAuthButton.addEventListener("click", () => {
-  setAuthMode(authDialog, "login");
+chooseLocationButton.addEventListener("click", () => {
+  mapController?.beginLocationSelection();
+  locationHelp.textContent = "Toca cualquier punto del mapa para ubicarte. Después puedes arrastrar el pin.";
+  confirmLocationButton.hidden = true;
+});
+
+confirmLocationButton.addEventListener("click", () => {
+  if (!userLocation) return;
+  mapController?.endLocationSelection();
+  confirmLocationButton.hidden = true;
+  locationHelp.textContent = "Ubicación manual confirmada.";
+  liveRegion.textContent = "Ubicación manual confirmada.";
+});
+
+function setSheetState(state) {
+  if (window.matchMedia("(min-width: 768px)").matches) return;
+  controlPanel.dataset.sheet = state;
+  sheetToggle.setAttribute("aria-expanded", String(state === "expanded"));
+  sheetToggle.setAttribute("aria-label", state === "expanded" ? "Contraer panel" : "Expandir panel");
+}
+
+sheetToggle.addEventListener("click", () => {
+  const nextState = controlPanel.dataset.sheet === "collapsed" ? "mid"
+    : controlPanel.dataset.sheet === "mid" ? "expanded"
+      : "mid";
+  setSheetState(nextState);
+});
+
+let sheetStartY = null;
+sheetToggle.addEventListener("pointerdown", (event) => {
+  sheetStartY = event.clientY;
+  sheetToggle.setPointerCapture(event.pointerId);
+});
+sheetToggle.addEventListener("pointerup", (event) => {
+  if (sheetStartY === null) return;
+  const movement = event.clientY - sheetStartY;
+  sheetStartY = null;
+  if (Math.abs(movement) < 36) return;
+  setSheetState(movement > 0 ? "collapsed" : "expanded");
+});
+
+function openAuthentication(mode = "login") {
+  setAuthMode(authDialog, mode);
   authDialog.showModal();
   document.querySelector("#login-email").focus();
-});
+}
+
+openAuthButton.addEventListener("click", () => openAuthentication());
+openAuthGateButton.addEventListener("click", () => openAuthentication());
 
 closeAuthButton.addEventListener("click", () => authDialog.close());
 loginTab.addEventListener("click", () => setAuthMode(authDialog, "login"));
@@ -397,37 +567,19 @@ clearSelectionButton.addEventListener("click", () => {
   populateBusSelector(busSelect, buses, routes, "all");
   populateStopSelector(stopSelect, null);
   applySelection();
-  mapController.fitRoutes();
+  mapController?.fitRoutes();
   liveRegion.textContent = "Mostrando todas las rutas y buses.";
 });
 
-fitRoutesButton.addEventListener("click", () => mapController.fitRoutes());
+fitRoutesButton.addEventListener("click", () => mapController?.fitRoutes());
 
-positionSource.subscribe((positions, updatedAt) => {
-  latestPositions = positions;
-  mapController.updatePositions(positions);
-  if (APP_CONFIG.positionSource === "firebase" && !updatedAt) {
-    lastUpdate.textContent = "Esperando que el administrador inicie la simulación.";
-  } else {
-    const sourceLabel = APP_CONFIG.positionSource === "firebase" ? "sincronizada" : "local";
-    lastUpdate.textContent = `Última actualización ${sourceLabel}: ${formatUpdateTime(updatedAt)}`;
-  }
-  updateEta();
-});
-
-positionSource.subscribeStatus?.(({ connected, updatedAt, error }) => {
-  const isStale = updatedAt > 0 && Date.now() - updatedAt > APP_CONFIG.stalePositionMs;
-  liveIndicator.textContent = error || !connected ? "Sin conexión" : isStale ? "Datos desactualizados" : "Activa";
-  liveIndicator.classList.toggle("is-warning", isStale);
-  liveIndicator.classList.toggle("is-offline", Boolean(error) || !connected);
-});
-
-mapController.setStopSelectionHandler(selectStop);
 observeAuthState((user) => {
   unsubscribeFavorites?.();
   unsubscribeHistory?.();
   currentUser = user;
   const isAuthenticated = Boolean(user);
+  authGate.hidden = isAuthenticated;
+  authenticatedApp.hidden = !isAuthenticated;
   openAuthButton.hidden = isAuthenticated;
   sessionActions.hidden = !isAuthenticated;
   sessionName.textContent = user?.email ?? "";
@@ -436,8 +588,14 @@ observeAuthState((user) => {
   setUserDataFeedback("");
   favoritesList.replaceChildren();
   historyList.replaceChildren();
+  if (!isAuthenticated) {
+    teardownAuthenticatedApp();
+    updateFavoriteControls();
+    return;
+  }
+  if (authDialog.open) authDialog.close();
+  initializeAuthenticatedApp();
   updateFavoriteControls();
-  if (!isAuthenticated) return;
   unsubscribeFavorites = subscribeToFavorites(user.uid, (nextFavorites) => {
     favorites = nextFavorites;
     renderFavorites();
@@ -446,7 +604,5 @@ observeAuthState((user) => {
   unsubscribeHistory = subscribeToHistory(user.uid, renderHistory);
   liveRegion.textContent = "Sesión iniciada correctamente.";
 });
-applySelection();
-positionSource.start();
 
-window.addEventListener("beforeunload", () => positionSource.stop());
+window.addEventListener("beforeunload", () => positionSource?.stop());
