@@ -26,6 +26,8 @@
 .user-data h3 { margin: var(--space-4) 0 var(--space-2); font-size: 0.8125rem; }
 .favorite-actions { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
 .favorite-actions .secondary-button { margin-top: 0; }
+.user-data-feedback { min-height: 1.5em; margin: var(--space-2) 0 0; color: #166534; font-size: 0.8125rem; }
+.user-data-feedback.is-error { color: #b91c1c; }
 .saved-list { display: grid; gap: var(--space-2); padding: 0; margin: 0; list-style: none; }
 .saved-list li { min-width: 0; }
 .saved-list button { width: 100%; min-height: 40px; padding: var(--space-2) var(--space-3); overflow: hidden; color: var(--color-text); font-size: 0.8125rem; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: #f8fafc; border: 1px solid var(--color-border); border-radius: 8px; }

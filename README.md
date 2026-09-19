@@ -4,19 +4,21 @@ Prototipo académico de una aplicación web para rastrear buses urbanos simulado
 
 ## Estado actual
 
-La Fase 1 está implementada:
+El prototipo funcional incluye:
 
 - Mapa Leaflet con tiles de OpenStreetMap.
 - Tres trazados académicos aproximados: C-2, Troncal 1 y C-10.
-- Nueve buses moviéndose localmente mediante interpolación lineal.
+- Nueve buses simulados y sincronizados con Firebase Realtime Database.
 - Filtros por ruta y bus.
 - Selección de paraderos desde el formulario o directamente en el mapa.
 - ETA local por segmentos y tiempo promedio configurable.
 - Geolocalización opcional para calcular la distancia al paradero.
 - Diseño responsive, con panel inferior en móvil y panel lateral en escritorio.
-- Pruebas del motor de simulación y validación de datos.
+- Registro, login, favoritos e historial privado por usuario.
+- Panel administrativo con simulador central y lease para impedir duplicados.
+- Pruebas del motor de simulación, ETA y cálculos geográficos.
 
-Firebase, autenticación y persistencia se incorporarán en fases posteriores. El seguimiento actual es **local y simulado**: cada navegador ejecuta su propia simulación. La sincronización central llegará con Firebase Realtime Database.
+El movimiento continúa siendo **simulado**, no GPS real. Firebase centraliza las posiciones para que todos los navegadores vean la misma simulación.
 
 ## Datos y limitaciones
 
@@ -63,7 +65,7 @@ tests/                       Pruebas unitarias
 
 Cada bus conserva un segmento y un progreso entre `0` y `1`. Cada tres segundos se avanza el progreso y se interpola su latitud y longitud entre el punto actual y el siguiente. Al terminar el último segmento, el bus vuelve al primero para formar un circuito continuo.
 
-La interfaz consume una fuente de posiciones desacoplada. Actualmente usa `LocalPositionSource`; en una fase posterior se añadirá `FirebasePositionSource` para que todos los usuarios vean las mismas posiciones.
+La interfaz consume una fuente de posiciones desacoplada. El despliegue usa `FirebasePositionSource`; `LocalPositionSource` queda disponible para pruebas sin red. Una futura fuente GPS real puede implementar el mismo contrato sin rediseñar el mapa, filtros o ETA.
 
 ## ETA y ubicación
 
@@ -129,3 +131,31 @@ Para una demostración local:
 5. Abre el mapa en dos pestañas o dispositivos y confirma que todos ven el mismo movimiento.
 
 Solo el UID administrador puede escribir posiciones. El panel usa un lease temporal de diez segundos: una segunda pestaña no puede iniciar otro simulador mientras el lease de la primera continúe vigente. Si se cierra el panel, el lease vence y una nueva sesión puede asumir el control.
+
+## Despliegue en GitHub Pages
+
+El workflow [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml) ejecuta tests, compila con Node 24 y publica `dist/` al hacer push a `main`.
+
+Antes del primer despliegue:
+
+1. En GitHub: **Settings > Pages > Build and deployment > Source**, selecciona **GitHub Actions**.
+2. En GitHub: **Settings > Secrets and variables > Actions**, crea estos secrets usando los valores de `.env.local`:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_DATABASE_URL`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+   - `VITE_ADMIN_UID`
+3. En Firebase Authentication: **Settings > Authorized domains**, añade `gonzalorail.github.io`.
+4. Sube los cambios a la rama `main`.
+
+La URL prevista es `https://gonzalorail.github.io/YaToy/`. El panel administrativo se publica en `https://gonzalorail.github.io/YaToy/admin.html` y exige la cuenta administradora.
+
+## Fuentes de referencia
+
+- [WikiRoutes Arequipa](https://wikiroutes.info/es/arequipa/catalog), consultada como referencia de nomenclatura de rutas.
+- [OpenStreetMap](https://www.openstreetmap.org/copyright), proveedor de los tiles del mapa.
+
+Las coordenadas del repositorio son aproximaciones académicas y no trazados oficiales.

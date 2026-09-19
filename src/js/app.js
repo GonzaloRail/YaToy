@@ -51,6 +51,7 @@ const favoriteStopButton = document.querySelector("#favorite-stop");
 const favoritesList = document.querySelector("#favorites-list");
 const historyList = document.querySelector("#history-list");
 const clearHistoryButton = document.querySelector("#clear-history");
+const userDataFeedback = document.querySelector("#user-data-feedback");
 let latestPositions = {};
 let userLocation = null;
 let currentUser = null;
@@ -142,6 +143,11 @@ function updateFavoriteControls() {
   favoriteStopButton.disabled = !currentUser || !stop;
   favoriteRouteButton.textContent = route && favorites.rutas?.[route.id] ? "Quitar ruta guardada" : "Guardar ruta";
   favoriteStopButton.textContent = stop && favorites.paraderos?.[stop.id] ? "Quitar paradero guardado" : "Guardar paradero";
+}
+
+function setUserDataFeedback(message, isError = false) {
+  userDataFeedback.textContent = message;
+  userDataFeedback.classList.toggle("is-error", isError);
 }
 
 function addEmptyItem(list, text) {
@@ -268,9 +274,11 @@ favoriteRouteButton.addEventListener("click", async () => {
   const route = getSelectedRoute();
   if (!currentUser || !route) return;
   try {
-    await setFavorite(currentUser.uid, "rutas", route.id, !favorites.rutas?.[route.id]);
+    const willSave = !favorites.rutas?.[route.id];
+    await setFavorite(currentUser.uid, "rutas", route.id, willSave);
+    setUserDataFeedback(willSave ? `Ruta ${route.code} guardada.` : `Ruta ${route.code} eliminada.`);
   } catch (error) {
-    liveRegion.textContent = "No fue posible actualizar la ruta guardada.";
+    setUserDataFeedback("No fue posible actualizar la ruta guardada.", true);
   }
 });
 
@@ -278,9 +286,11 @@ favoriteStopButton.addEventListener("click", async () => {
   const stop = getSelectedStop();
   if (!currentUser || !stop) return;
   try {
-    await setFavorite(currentUser.uid, "paraderos", stop.id, !favorites.paraderos?.[stop.id]);
+    const willSave = !favorites.paraderos?.[stop.id];
+    await setFavorite(currentUser.uid, "paraderos", stop.id, willSave);
+    setUserDataFeedback(willSave ? `Paradero ${stop.name} guardado.` : `Paradero ${stop.name} eliminado.`);
   } catch (error) {
-    liveRegion.textContent = "No fue posible actualizar el paradero guardado.";
+    setUserDataFeedback("No fue posible actualizar el paradero guardado.", true);
   }
 });
 
@@ -289,9 +299,9 @@ clearHistoryButton.addEventListener("click", async () => {
   clearHistoryButton.disabled = true;
   try {
     await clearHistory(currentUser.uid);
-    liveRegion.textContent = "Historial eliminado.";
+    setUserDataFeedback("Historial eliminado.");
   } catch (error) {
-    liveRegion.textContent = "No fue posible eliminar el historial.";
+    setUserDataFeedback("No fue posible eliminar el historial.", true);
   } finally {
     clearHistoryButton.disabled = false;
   }
@@ -423,6 +433,7 @@ observeAuthState((user) => {
   sessionName.textContent = user?.email ?? "";
   userData.hidden = !isAuthenticated;
   favorites = {};
+  setUserDataFeedback("");
   favoritesList.replaceChildren();
   historyList.replaceChildren();
   updateFavoriteControls();
