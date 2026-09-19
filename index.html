@@ -17,7 +17,14 @@
           <span class="brand-mark" aria-hidden="true">Y</span>
           <span>YaToy</span>
         </a>
-        <p class="simulation-badge"><span aria-hidden="true"></span> Simulación académica</p>
+        <div class="header-actions">
+          <p class="simulation-badge"><span aria-hidden="true"></span> Simulación académica</p>
+          <button id="open-auth" class="header-button" type="button">Ingresar</button>
+          <div id="session-actions" class="session-actions" hidden>
+            <span id="session-name" aria-live="polite"></span>
+            <button id="logout" class="header-button" type="button">Salir</button>
+          </div>
+        </div>
       </header>
 
       <main id="main-content" class="main-layout">
@@ -80,10 +87,24 @@
 
           <button id="clear-selection" class="secondary-button" type="button">Mostrar todas las rutas</button>
 
+          <section id="user-data" class="user-data" aria-labelledby="user-data-title" hidden>
+            <p class="eyebrow">Tu cuenta</p>
+            <h2 id="user-data-title">Guardados</h2>
+            <div class="favorite-actions">
+              <button id="favorite-route" class="secondary-button" type="button" disabled>Guardar ruta</button>
+              <button id="favorite-stop" class="secondary-button" type="button" disabled>Guardar paradero</button>
+            </div>
+            <h3>Favoritos</h3>
+            <ul id="favorites-list" class="saved-list"></ul>
+            <h3>Historial reciente</h3>
+            <ul id="history-list" class="saved-list"></ul>
+            <button id="clear-history" class="text-button" type="button">Limpiar historial</button>
+          </section>
+
           <section class="live-status" aria-labelledby="status-title">
             <div class="status-heading">
               <h2 id="status-title">Estado de simulación</h2>
-              <span class="live-indicator"><span aria-hidden="true"></span> Activa</span>
+              <span id="live-indicator" class="live-indicator"><span aria-hidden="true"></span> Activa</span>
             </div>
             <p id="last-update">Preparando posiciones...</p>
           </section>
@@ -96,6 +117,55 @@
         </aside>
       </main>
     </div>
+    <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">Tu cuenta YaToy</p>
+          <h2 id="auth-title">Accede para guardar favoritos</h2>
+        </div>
+        <button id="close-auth" class="icon-button" type="button" aria-label="Cerrar autenticación">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+      <div class="auth-tabs" role="tablist" aria-label="Opciones de autenticación">
+        <button id="login-tab" type="button" role="tab" aria-selected="true">Ingresar</button>
+        <button id="register-tab" type="button" role="tab" aria-selected="false">Crear cuenta</button>
+      </div>
+      <p id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
+      <form id="login-form" class="auth-form">
+        <div class="field-group">
+          <label for="login-email">Correo electrónico</label>
+          <input id="login-email" name="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field-group">
+          <label for="login-password">Contraseña</label>
+          <div class="password-field">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" minlength="6" required />
+            <button class="password-toggle" type="button" data-password-target="login-password" aria-pressed="false">Mostrar</button>
+          </div>
+        </div>
+        <button class="primary-button" type="submit">Ingresar</button>
+      </form>
+      <form id="register-form" class="auth-form" hidden>
+        <div class="field-group">
+          <label for="register-name">Nombre</label>
+          <input id="register-name" name="name" type="text" autocomplete="name" minlength="2" maxlength="80" required />
+        </div>
+        <div class="field-group">
+          <label for="register-email">Correo electrónico</label>
+          <input id="register-email" name="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field-group">
+          <label for="register-password">Contraseña</label>
+          <div class="password-field">
+            <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="6" aria-describedby="password-help" required />
+            <button class="password-toggle" type="button" data-password-target="register-password" aria-pressed="false">Mostrar</button>
+          </div>
+          <small id="password-help">Usa al menos 6 caracteres.</small>
+        </div>
+        <button class="primary-button" type="submit">Crear cuenta</button>
+      </form>
+    </dialog>
     <div id="live-region" class="sr-only" aria-live="polite"></div>
     <script type="module" src="/src/js/app.js"></script>
   </body>

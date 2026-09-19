@@ -7,12 +7,16 @@ import { routes } from "./data/routes.js";
 import { calculateEtaSeconds, formatEta } from "./core/eta-calculator.js";
 import { calculateDistanceMeters, formatDistance } from "./core/geo-utils.js";
 import { validateNetwork } from "./core/validators.js";
+import { getAuthErrorMessage, loginUser, logoutUser, observeAuthState, registerUser } from "./firebase/auth-service.js";
 import { MapController } from "./map/map-controller.js";
 import { getCurrentLocation } from "./services/geolocation-service.js";
+import { FirebasePositionSource } from "./services/firebase-position-source.js";
 import { LocalPositionSource } from "./services/local-position-source.js";
+import { clearHistory, recordSearch, setFavorite, subscribeToFavorites, subscribeToHistory } from "./services/user-data-service.js";
 import { populateBusSelector, populateRouteSelector } from "./ui/route-selector.js";
 import { formatUpdateTime } from "./ui/status-banner.js";
 import { findStop, populateStopSelector } from "./ui/stop-selector.js";
+import { setAuthFeedback, setAuthMode, setFormBusy } from "./ui/auth-dialog.js";
 
 validateNetwork(routes, companies, buses);
 
@@ -26,11 +30,35 @@ const visibleBusCount = document.querySelector("#visible-bus-count");
 const busList = document.querySelector("#bus-list");
 const routeLegend = document.querySelector("#route-legend");
 const lastUpdate = document.querySelector("#last-update");
+const liveIndicator = document.querySelector("#live-indicator");
 const liveRegion = document.querySelector("#live-region");
 const etaMessage = document.querySelector("#eta-message");
 const distanceMessage = document.querySelector("#distance-message");
+const authDialog = document.querySelector("#auth-dialog");
+const openAuthButton = document.querySelector("#open-auth");
+const closeAuthButton = document.querySelector("#close-auth");
+const loginTab = document.querySelector("#login-tab");
+const registerTab = document.querySelector("#register-tab");
+const loginForm = document.querySelector("#login-form");
+const registerForm = document.querySelector("#register-form");
+const authFeedback = document.querySelector("#auth-feedback");
+const sessionActions = document.querySelector("#session-actions");
+const sessionName = document.querySelector("#session-name");
+const logoutButton = document.querySelector("#logout");
+const userData = document.querySelector("#user-data");
+const favoriteRouteButton = document.querySelector("#favorite-route");
+const favoriteStopButton = document.querySelector("#favorite-stop");
+const favoritesList = document.querySelector("#favorites-list");
+const historyList = document.querySelector("#history-list");
+const clearHistoryButton = document.querySelector("#clear-history");
 let latestPositions = {};
 let userLocation = null;
+let currentUser = null;
+let favorites = {};
+let unsubscribeFavorites = null;
+let unsubscribeHistory = null;
+let lastSearchKey = null;
+let lastSearchAt = 0;
 
 populateRouteSelector(routeSelect, routes);
 populateBusSelector(busSelect, buses, routes, "all");
@@ -49,7 +77,9 @@ const mapController = new MapController({
   buses,
 });
 
-const positionSource = new LocalPositionSource({ routes, buses, intervalMs: APP_CONFIG.simulationIntervalMs });
+const positionSource = APP_CONFIG.positionSource === "firebase"
+  ? new FirebasePositionSource()
+  : new LocalPositionSource({ routes, buses, intervalMs: APP_CONFIG.simulationIntervalMs });
 
 function visibleBuses() {
   return Object.values(buses).filter((bus) =>
@@ -75,6 +105,7 @@ function applySelection({ focusBus = false } = {}) {
   updateBusSummary();
   if (focusBus && busSelect.value !== "all") mapController.focusBus(busSelect.value);
   updateEta();
+  updateFavoriteControls();
 }
 
 function getSelectedRoute() {
@@ -100,6 +131,105 @@ function updateEta() {
   distanceMessage.textContent = `Estás a ${formatDistance(calculateDistanceMeters(userLocation, { lat, lng }))} del paradero.`;
 }
 
+function getSelectedStop() {
+  return findStop(getSelectedRoute(), stopSelect.value);
+}
+
+function updateFavoriteControls() {
+  const route = getSelectedRoute();
+  const stop = getSelectedStop();
+  favoriteRouteButton.disabled = !currentUser || !route;
+  favoriteStopButton.disabled = !currentUser || !stop;
+  favoriteRouteButton.textContent = route && favorites.rutas?.[route.id] ? "Quitar ruta guardada" : "Guardar ruta";
+  favoriteStopButton.textContent = stop && favorites.paraderos?.[stop.id] ? "Quitar paradero guardado" : "Guardar paradero";
+}
+
+function addEmptyItem(list, text) {
+  const item = document.createElement("li");
+  item.className = "empty-item";
+  item.textContent = text;
+  list.append(item);
+}
+
+function renderFavorites() {
+  favoritesList.replaceChildren();
+  const favoriteRoutes = Object.keys(favorites.rutas ?? {}).map((routeId) => routes[routeId]).filter(Boolean);
+  const favoriteStops = Object.keys(favorites.paraderos ?? {}).map((stopId) => {
+    const route = Object.values(routes).find((candidate) => candidate.stops.some((stop) => stop.id === stopId));
+    return route ? { route, stop: findStop(route, stopId) } : null;
+  }).filter(Boolean);
+  if (!favoriteRoutes.length && !favoriteStops.length) {
+    addEmptyItem(favoritesList, "Aún no tienes favoritos.");
+    return;
+  }
+  favoriteRoutes.forEach((route) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = `Ruta ${route.code}`;
+    button.addEventListener("click", () => {
+      routeSelect.value = route.id;
+      populateBusSelector(busSelect, buses, routes, route.id);
+      populateStopSelector(stopSelect, route);
+      applySelection();
+    });
+    item.append(button);
+    favoritesList.append(item);
+  });
+  favoriteStops.forEach(({ route, stop }) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = `${stop.name} · ${route.code}`;
+    button.addEventListener("click", () => selectStop(route.id, stop.id));
+    item.append(button);
+    favoritesList.append(item);
+  });
+}
+
+function renderHistory(entries) {
+  historyList.replaceChildren();
+  if (!entries.length) {
+    addEmptyItem(historyList, "Aún no tienes búsquedas guardadas.");
+    return;
+  }
+  entries.forEach((entry) => {
+    const route = routes[entry.rutaId];
+    const bus = buses[entry.busId];
+    const stop = findStop(route, entry.paraderoId);
+    if (!route || !bus || !stop) return;
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = `${route.code} · ${bus.name} · ${stop.name}`;
+    button.addEventListener("click", () => {
+      routeSelect.value = route.id;
+      populateBusSelector(busSelect, buses, routes, route.id);
+      busSelect.value = bus.id;
+      selectStop(route.id, stop.id);
+      applySelection({ focusBus: true });
+    });
+    item.append(button);
+    historyList.append(item);
+  });
+}
+
+async function maybeRecordSearch() {
+  const route = getSelectedRoute();
+  const stop = getSelectedStop();
+  if (!currentUser || !route || !stop || busSelect.value === "all") return;
+  const search = { rutaId: route.id, busId: busSelect.value, paraderoId: stop.id };
+  const key = Object.values(search).join("/");
+  if (key === lastSearchKey && Date.now() - lastSearchAt < 5_000) return;
+  lastSearchKey = key;
+  lastSearchAt = Date.now();
+  try {
+    await recordSearch(currentUser.uid, search);
+  } catch (error) {
+    liveRegion.textContent = "No fue posible guardar el historial en este momento.";
+  }
+}
+
 function selectStop(routeId, stopId) {
   if (routeSelect.value !== routeId) {
     routeSelect.value = routeId;
@@ -109,6 +239,7 @@ function selectStop(routeId, stopId) {
   stopSelect.value = stopId;
   mapController.highlightStop(routeId, stopId);
   applySelection();
+  void maybeRecordSearch();
   liveRegion.textContent = `Paradero seleccionado: ${findStop(routes[routeId], stopId).name}.`;
 }
 
@@ -120,6 +251,7 @@ routeSelect.addEventListener("change", () => {
 });
 
 busSelect.addEventListener("change", () => applySelection({ focusBus: true }));
+busSelect.addEventListener("change", () => void maybeRecordSearch());
 
 stopSelect.addEventListener("change", () => {
   const route = getSelectedRoute();
@@ -129,6 +261,40 @@ stopSelect.addEventListener("change", () => {
   }
   mapController.highlightStop(route.id, stopSelect.value);
   updateEta();
+  void maybeRecordSearch();
+});
+
+favoriteRouteButton.addEventListener("click", async () => {
+  const route = getSelectedRoute();
+  if (!currentUser || !route) return;
+  try {
+    await setFavorite(currentUser.uid, "rutas", route.id, !favorites.rutas?.[route.id]);
+  } catch (error) {
+    liveRegion.textContent = "No fue posible actualizar la ruta guardada.";
+  }
+});
+
+favoriteStopButton.addEventListener("click", async () => {
+  const stop = getSelectedStop();
+  if (!currentUser || !stop) return;
+  try {
+    await setFavorite(currentUser.uid, "paraderos", stop.id, !favorites.paraderos?.[stop.id]);
+  } catch (error) {
+    liveRegion.textContent = "No fue posible actualizar el paradero guardado.";
+  }
+});
+
+clearHistoryButton.addEventListener("click", async () => {
+  if (!currentUser || !window.confirm("¿Quieres eliminar todo tu historial de búsquedas?")) return;
+  clearHistoryButton.disabled = true;
+  try {
+    await clearHistory(currentUser.uid);
+    liveRegion.textContent = "Historial eliminado.";
+  } catch (error) {
+    liveRegion.textContent = "No fue posible eliminar el historial.";
+  } finally {
+    clearHistoryButton.disabled = false;
+  }
 });
 
 locateUserButton.addEventListener("click", async () => {
@@ -149,6 +315,73 @@ locateUserButton.addEventListener("click", async () => {
   }
 });
 
+openAuthButton.addEventListener("click", () => {
+  setAuthMode(authDialog, "login");
+  authDialog.showModal();
+  document.querySelector("#login-email").focus();
+});
+
+closeAuthButton.addEventListener("click", () => authDialog.close());
+loginTab.addEventListener("click", () => setAuthMode(authDialog, "login"));
+registerTab.addEventListener("click", () => setAuthMode(authDialog, "register"));
+
+document.querySelectorAll(".password-toggle").forEach((button) => {
+  button.addEventListener("click", () => {
+    const input = document.querySelector(`#${button.dataset.passwordTarget}`);
+    const shouldShow = input.type === "password";
+    input.type = shouldShow ? "text" : "password";
+    button.textContent = shouldShow ? "Ocultar" : "Mostrar";
+    button.setAttribute("aria-pressed", String(shouldShow));
+  });
+});
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(loginForm);
+  setFormBusy(loginForm, true, "Ingresar");
+  setAuthFeedback(authFeedback, "");
+  try {
+    await loginUser({ email: formData.get("email"), password: formData.get("password") });
+    authDialog.close();
+    loginForm.reset();
+  } catch (error) {
+    setAuthFeedback(authFeedback, getAuthErrorMessage(error), true);
+  } finally {
+    setFormBusy(loginForm, false, "Ingresar");
+  }
+});
+
+registerForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(registerForm);
+  setFormBusy(registerForm, true, "Crear cuenta");
+  setAuthFeedback(authFeedback, "");
+  try {
+    await registerUser({
+      name: formData.get("name").trim(),
+      email: formData.get("email"),
+      password: formData.get("password"),
+    });
+    authDialog.close();
+    registerForm.reset();
+  } catch (error) {
+    setAuthFeedback(authFeedback, getAuthErrorMessage(error), true);
+  } finally {
+    setFormBusy(registerForm, false, "Crear cuenta");
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  logoutButton.disabled = true;
+  try {
+    await logoutUser();
+  } catch (error) {
+    liveRegion.textContent = getAuthErrorMessage(error);
+  } finally {
+    logoutButton.disabled = false;
+  }
+});
+
 clearSelectionButton.addEventListener("click", () => {
   routeSelect.value = "all";
   populateBusSelector(busSelect, buses, routes, "all");
@@ -163,11 +396,45 @@ fitRoutesButton.addEventListener("click", () => mapController.fitRoutes());
 positionSource.subscribe((positions, updatedAt) => {
   latestPositions = positions;
   mapController.updatePositions(positions);
-  lastUpdate.textContent = `Última actualización local: ${formatUpdateTime(updatedAt)}`;
+  if (APP_CONFIG.positionSource === "firebase" && !updatedAt) {
+    lastUpdate.textContent = "Esperando que el administrador inicie la simulación.";
+  } else {
+    const sourceLabel = APP_CONFIG.positionSource === "firebase" ? "sincronizada" : "local";
+    lastUpdate.textContent = `Última actualización ${sourceLabel}: ${formatUpdateTime(updatedAt)}`;
+  }
   updateEta();
 });
 
+positionSource.subscribeStatus?.(({ connected, updatedAt, error }) => {
+  const isStale = updatedAt > 0 && Date.now() - updatedAt > APP_CONFIG.stalePositionMs;
+  liveIndicator.textContent = error || !connected ? "Sin conexión" : isStale ? "Datos desactualizados" : "Activa";
+  liveIndicator.classList.toggle("is-warning", isStale);
+  liveIndicator.classList.toggle("is-offline", Boolean(error) || !connected);
+});
+
 mapController.setStopSelectionHandler(selectStop);
+observeAuthState((user) => {
+  unsubscribeFavorites?.();
+  unsubscribeHistory?.();
+  currentUser = user;
+  const isAuthenticated = Boolean(user);
+  openAuthButton.hidden = isAuthenticated;
+  sessionActions.hidden = !isAuthenticated;
+  sessionName.textContent = user?.email ?? "";
+  userData.hidden = !isAuthenticated;
+  favorites = {};
+  favoritesList.replaceChildren();
+  historyList.replaceChildren();
+  updateFavoriteControls();
+  if (!isAuthenticated) return;
+  unsubscribeFavorites = subscribeToFavorites(user.uid, (nextFavorites) => {
+    favorites = nextFavorites;
+    renderFavorites();
+    updateFavoriteControls();
+  });
+  unsubscribeHistory = subscribeToHistory(user.uid, renderHistory);
+  liveRegion.textContent = "Sesión iniciada correctamente.";
+});
 applySelection();
 positionSource.start();
 

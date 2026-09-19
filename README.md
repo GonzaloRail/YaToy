@@ -83,6 +83,21 @@ El proyecto Firebase configurado para este prototipo es `yatoy-arequipa-2026`. L
 
 Antes de implementar el login, abre la [consola de Authentication](https://console.firebase.google.com/project/yatoy-arequipa-2026/authentication/providers), pulsa **Get started**, activa **Email/Password**, habilita la primera opción y guarda los cambios.
 
+### Uso de la autenticación
+
+El botón **Ingresar** abre el diálogo de acceso. Una cuenta nueva requiere nombre, correo y contraseña de seis caracteres como mínimo. Al registrarse se crea `usuarios/{uid}/perfil` en Realtime Database. Las rutas y el mapa continúan disponibles sin iniciar sesión; las siguientes fases usarán la sesión para favoritos e historial.
+
+Prueba manual recomendada:
+
+1. Ejecuta `npm run dev`.
+2. Crea una cuenta de prueba desde **Crear cuenta**.
+3. Recarga la página y confirma que la sesión persiste.
+4. Pulsa **Salir** e ingresa otra vez con la misma cuenta.
+
+### Favoritos e historial
+
+Después de iniciar sesión puedes guardar la ruta o paradero seleccionado. El historial se guarda al completar una selección de ruta, bus y paradero; conserva las diez búsquedas más recientes. Ambos datos se almacenan exclusivamente en `usuarios/{uid}` y no incluyen coordenadas de la ubicación del usuario.
+
 ### Datos y reglas
 
 - `data/seed-data.json` contiene empresas, rutas, buses y posiciones iniciales.
@@ -100,3 +115,17 @@ npx -y firebase-tools@latest database:set / data/seed-data.json --project yatoy-
 ```
 
 > El segundo comando reemplaza toda la base de datos. Úsalo únicamente para restaurar el estado académico inicial.
+
+## Simulación central
+
+La aplicación lee posiciones desde Realtime Database mediante `FirebasePositionSource`. El panel [`admin.html`](./admin.html) ejecuta el motor de simulación y escribe las posiciones compartidas cada tres segundos.
+
+Para una demostración local:
+
+1. Ejecuta `npm run dev`.
+2. Inicia sesión en `index.html` con la cuenta administradora.
+3. Abre `http://localhost:5173/admin.html` en la misma sesión.
+4. Pulsa **Iniciar simulación**.
+5. Abre el mapa en dos pestañas o dispositivos y confirma que todos ven el mismo movimiento.
+
+Solo el UID administrador puede escribir posiciones. El panel usa un lease temporal de diez segundos: una segunda pestaña no puede iniciar otro simulador mientras el lease de la primera continúe vigente. Si se cierra el panel, el lease vence y una nueva sesión puede asumir el control.

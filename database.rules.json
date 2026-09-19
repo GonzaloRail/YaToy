@@ -18,12 +18,17 @@
       ".read": true,
       ".write": false,
       "$busId": {
+        ".write": "auth != null && auth.uid === 'QH6CYFAerQNL3eAqaPpqIBPo9Cn1' && root.child('simulacion/control/propietarioId').val() === newData.child('simuladorId').val() && root.child('simulacion/control/leaseExpiraEn').val() > now",
         ".validate": "!newData.exists() || (newData.hasChildren(['rutaId', 'indiceSegmento', 'progreso', 'lat', 'lng', 'actualizadoEn']) && newData.child('rutaId').isString() && newData.child('indiceSegmento').isNumber() && newData.child('indiceSegmento').val() >= 0 && newData.child('progreso').isNumber() && newData.child('progreso').val() >= 0 && newData.child('progreso').val() < 1 && newData.child('lat').isNumber() && newData.child('lat').val() >= -90 && newData.child('lat').val() <= 90 && newData.child('lng').isNumber() && newData.child('lng').val() >= -180 && newData.child('lng').val() <= 180 && newData.child('actualizadoEn').isNumber())"
       }
     },
     "simulacion": {
       ".read": true,
-      ".write": false
+      ".write": false,
+      "control": {
+        ".write": "auth != null && auth.uid === 'QH6CYFAerQNL3eAqaPpqIBPo9Cn1' && (!data.exists() || !data.child('leaseExpiraEn').exists() || data.child('leaseExpiraEn').val() <= now || data.child('propietarioId').val() === newData.child('propietarioId').val())",
+        ".validate": "newData.hasChildren(['activa', 'intervaloMs', 'propietarioId', 'leaseExpiraEn', 'ultimaActualizacion']) && newData.child('activa').isBoolean() && newData.child('intervaloMs').isNumber() && newData.child('leaseExpiraEn').isNumber() && newData.child('ultimaActualizacion').isNumber()"
+      }
     },
     "usuarios": {
       "$uid": {

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>YaToy | Panel de simulación</title>
+  </head>
+  <body>
+    <main class="admin-page">
+      <a class="brand" href="./index.html" aria-label="Volver al mapa YaToy">
+        <span class="brand-mark" aria-hidden="true">Y</span>
+        <span>YaToy</span>
+      </a>
+      <section class="admin-card" aria-labelledby="admin-title">
+        <p class="eyebrow">Administración</p>
+        <h1 id="admin-title">Simulador central</h1>
+        <p id="admin-access-message" class="admin-message">Comprobando sesión...</p>
+
+        <div id="admin-controls" hidden>
+          <dl class="admin-status">
+            <div><dt>Estado</dt><dd id="simulator-status">Detenido</dd></div>
+            <div><dt>Control</dt><dd id="lease-status">Sin propietario</dd></div>
+            <div><dt>Última escritura</dt><dd id="write-status">Sin actualizaciones</dd></div>
+          </dl>
+          <div class="admin-actions">
+            <button id="start-simulation" class="primary-button" type="button">Iniciar simulación</button>
+            <button id="pause-simulation" class="secondary-button" type="button">Pausar simulación</button>
+            <button id="reset-simulation" class="secondary-button" type="button">Reiniciar posiciones</button>
+          </div>
+          <p id="admin-feedback" class="admin-feedback" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/js/admin.js"></script>
+  </body>
+</html>

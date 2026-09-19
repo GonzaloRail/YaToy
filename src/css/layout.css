@@ -3,6 +3,8 @@
 .brand { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text); font-size: 1.125rem; font-weight: 800; text-decoration: none; }
 .brand-mark { display: grid; place-items: center; width: 32px; height: 32px; color: #fff; background: var(--color-primary); border-radius: 9px; }
 .simulation-badge { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--color-muted); font-size: 0.75rem; font-weight: 700; text-align: right; }
+.header-actions, .session-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.session-actions { color: var(--color-muted); font-size: 0.8125rem; font-weight: 700; }
 .simulation-badge span, .live-indicator span { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
 .main-layout { position: relative; min-height: 0; }
 .map-region { height: calc(100dvh - 64px); min-height: 460px; }
@@ -12,4 +14,5 @@
 .panel-heading h1, .bus-summary h2, .live-status h2 { margin: 0; }
 .panel-heading h1 { font-size: 1.375rem; line-height: 1.2; }
 .eyebrow { margin: 0 0 var(--space-1); color: var(--color-primary); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+@media (max-width: 420px) { .session-actions span { display: none; } }
 @media (min-width: 768px) { .app-header { padding-inline: var(--space-5); } .control-panel { top: var(--space-4); right: var(--space-4); bottom: var(--space-4); left: auto; width: 360px; max-height: none; border-radius: var(--radius-lg); padding: var(--space-5); } .map-region { height: calc(100dvh - 64px); } }
