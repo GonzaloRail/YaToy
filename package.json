@@ -10,7 +10,8 @@
     "test": "vitest run",
     "import:wikiroutes:catalog": "node scripts/import-wikiroutes.js catalog",
     "import:wikiroutes:route": "node scripts/import-wikiroutes.js route",
-    "build:route:a1": "node scripts/build-route-module.js"
+    "import:wikiroutes:batch": "node scripts/import-wikiroutes.js batch",
+    "build:routes": "node scripts/build-route-module.js"
   },
   "repository": {
     "type": "git",

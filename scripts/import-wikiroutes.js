@@ -41,6 +41,11 @@ export function parseCatalog(html) {
   return [...routes.values()].sort((first, second) => first.code.localeCompare(second.code, "es", { numeric: true }));
 }
 
+export function parseRouteList(markdown) {
+  return [...markdown.matchAll(/^\s*\*\s+\*\*([A-Z]+\s+\d+):\*\*\s+https:\/\/wikiroutes\.info\/es\/arequipa\?routes=(\d+)/gim)]
+    .map((match) => ({ code: match[1].replace(/\s+/g, " ").trim(), id: match[2] }));
+}
+
 export function parseDirections(html) {
   const sections = html.split(/<h2[^>]*>/i).slice(1);
   return sections.map((section) => {
@@ -141,7 +146,20 @@ async function importCatalog() {
   console.log(`Catálogo urbano importado: ${catalog.length} rutas.`);
 }
 
+async function importBatch(markdownFile, firstCode, lastCode) {
+  const markdown = await readFile(resolve(markdownFile), "utf8");
+  const routes = parseRouteList(markdown)
+    .filter((route) => /^A\s+\d+$/i.test(route.code))
+    .filter((route) => {
+      const number = Number(route.code.replace(/\D/g, ""));
+      return number >= Number(firstCode) && number <= Number(lastCode);
+    });
+  if (!routes.length) throw new Error("No se encontraron rutas para importar.");
+  for (const route of routes) await importRoute(route.id, route.code);
+}
+
 const [command, routeId, ...codeParts] = process.argv.slice(2);
 if (command === "catalog") await importCatalog();
 else if (command === "route" && routeId && codeParts.length) await importRoute(routeId, codeParts.join(" "));
-else console.log("Uso: node scripts/import-wikiroutes.js catalog | route <id-wikiroutes> <codigo>");
+else if (command === "batch" && routeId && codeParts.length === 2) await importBatch(routeId, ...codeParts);
+else console.log("Uso: node scripts/import-wikiroutes.js catalog | route <id-wikiroutes> <codigo> | batch <archivo-markdown> <codigo-inicial> <codigo-final>");

@@ -1,15 +1,24 @@
 import { onValue, ref } from "firebase/database";
+import { advanceBus, createInitialState } from "../core/simulation-engine.js";
 import { database } from "../firebase/firebase-app.js";
 
 export class FirebasePositionSource {
-  constructor() {
+  constructor({ routes, buses, intervalMs }) {
+    this.routes = routes;
+    this.intervalMs = intervalMs;
     this.listeners = new Set();
     this.statusListeners = new Set();
     this.unsubscribePositions = null;
     this.unsubscribeConnection = null;
     this.statusTimer = null;
+    this.fallbackTimer = null;
+    this.lastFallbackTickAt = null;
     this.connected = false;
-    this.positions = {};
+    this.remotePositions = {};
+    this.fallbackPositions = Object.fromEntries(
+      Object.values(buses).map((bus) => [bus.id, createInitialState(bus, routes[bus.routeId])]),
+    );
+    this.positions = { ...this.fallbackPositions };
   }
 
   subscribe(listener) {
@@ -27,11 +36,12 @@ export class FirebasePositionSource {
     if (this.unsubscribePositions) return;
     this.unsubscribePositions = onValue(ref(database, "posicionesBuses"), (snapshot) => {
       const rawPositions = snapshot.val() ?? {};
-      this.positions = Object.fromEntries(Object.entries(rawPositions).map(([busId, position]) => [busId, {
+      this.remotePositions = Object.fromEntries(Object.entries(rawPositions).map(([busId, position]) => [busId, {
         ...position,
         segmentIndex: position.indiceSegmento,
         progress: position.progreso,
       }]));
+      this.refreshPositions();
       const updatedAt = this.getLatestUpdate();
       this.listeners.forEach((listener) => listener(this.positions, updatedAt));
       this.connected = true;
@@ -45,15 +55,36 @@ export class FirebasePositionSource {
       this.emitStatus();
     });
     this.statusTimer = window.setInterval(() => this.emitStatus(), 3_000);
+    this.lastFallbackTickAt = performance.now();
+    this.fallbackTimer = window.setInterval(() => this.tickFallback(), this.intervalMs);
   }
 
   stop() {
     this.unsubscribePositions?.();
     this.unsubscribeConnection?.();
     window.clearInterval(this.statusTimer);
+    window.clearInterval(this.fallbackTimer);
     this.unsubscribePositions = null;
     this.unsubscribeConnection = null;
     this.statusTimer = null;
+    this.fallbackTimer = null;
+  }
+
+  refreshPositions() {
+    this.positions = { ...this.fallbackPositions, ...this.remotePositions };
+  }
+
+  tickFallback() {
+    const now = performance.now();
+    const elapsedMs = now - this.lastFallbackTickAt;
+    this.lastFallbackTickAt = now;
+    this.fallbackPositions = Object.fromEntries(
+      Object.entries(this.fallbackPositions).map(([busId, state]) => this.remotePositions[busId]
+        ? [busId, state]
+        : [busId, advanceBus(state, this.routes[state.routeId], elapsedMs)]),
+    );
+    this.refreshPositions();
+    this.listeners.forEach((listener) => listener(this.positions, Date.now()));
   }
 
   getLatestUpdate() {

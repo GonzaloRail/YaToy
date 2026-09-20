@@ -31,6 +31,8 @@ const companySearch = document.querySelector("#company-search");
 const companyGrid = document.querySelector("#company-grid");
 const companyCatalogFeedback = document.querySelector("#company-catalog-feedback");
 const backToCatalogButton = document.querySelector("#back-to-catalog");
+const panelTitle = document.querySelector("#panel-title");
+const routeNotice = document.querySelector("#route-notice");
 const visibleBusCount = document.querySelector("#visible-bus-count");
 const busList = document.querySelector("#bus-list");
 const routeLegend = document.querySelector("#route-legend");
@@ -118,6 +120,8 @@ function openCompanyRoute(company) {
   busSelect.value = "all";
   companyCatalog.hidden = true;
   mainContent.hidden = false;
+  panelTitle.textContent = company.provisional ? `Ruta ${route.code}` : `Ruta ${route.code} de COTUM`;
+  routeNotice.textContent = `Las posiciones de los ${Object.values(buses).filter((bus) => bus.routeId === route.id).length} buses son simuladas. El recorrido ${route.code} fue importado de referencias públicas.`;
   initializeAuthenticatedApp();
   mapController?.fitRoutes();
   liveRegion.textContent = `${company.name}, ruta ${route.code}: ${Object.values(buses).filter((bus) => bus.companyId === company.id).length} buses activos.`;
@@ -143,7 +147,7 @@ function initializeAuthenticatedApp() {
   mapController.setStopSelectionHandler(selectStop);
   mapController.setUserLocationHandler(setUserLocation);
   positionSource = APP_CONFIG.positionSource === "firebase"
-    ? new FirebasePositionSource()
+    ? new FirebasePositionSource({ routes, buses, intervalMs: APP_CONFIG.simulationIntervalMs })
     : new LocalPositionSource({ routes, buses, intervalMs: APP_CONFIG.simulationIntervalMs });
   positionSource.subscribe((positions, updatedAt) => {
     latestPositions = positions;

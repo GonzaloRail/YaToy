@@ -1,11 +1,12 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const sourceFile = resolve("public/data/routes/a-1.json");
+const sourceDirectory = resolve("public/data/routes");
 const routesOutput = resolve("src/js/data/routes.js");
 const busesOutput = resolve("src/js/data/buses.js");
 const companiesOutput = resolve("src/js/data/companies.js");
 const seedOutput = resolve("data/seed-data.json");
+const routeColors = ["#2563eb", "#ea580c", "#16a34a", "#9333ea", "#db2777", "#0891b2", "#ca8a04", "#dc2626", "#4f46e5", "#059669", "#7c3aed"];
 
 function haversineMeters([lat1, lng1], [lat2, lng2]) {
   const radians = (value) => (value * Math.PI) / 180;
@@ -37,63 +38,93 @@ function nearestPointIndex(points, coordinate, offset = 0, length = points.lengt
   return closestIndex;
 }
 
-const source = JSON.parse(await readFile(sourceFile, "utf8"));
-const [outbound, inbound] = source.directions;
-const points = [...outbound.geometry, ...inbound.geometry.slice(1)];
-const { cumulativeDistances, totalDistanceMeters } = buildDistanceData(points);
-const outboundStops = outbound.stops.map((stop) => {
-  const pointIndex = nearestPointIndex(points, [stop.lat, stop.lng], 0, outbound.geometry.length);
-  return { id: `${outbound.id}-${stop.id}`, name: stop.name, pointIndex, directionId: outbound.id, distanceMeters: cumulativeDistances[pointIndex] };
-});
-const inboundOffset = outbound.geometry.length - 1;
-const inboundStops = inbound.stops.map((stop) => {
-  const pointIndex = nearestPointIndex(points, [stop.lat, stop.lng], inboundOffset, inbound.geometry.length);
-  return { id: `${inbound.id}-${stop.id}`, name: stop.name, pointIndex, directionId: inbound.id, distanceMeters: cumulativeDistances[pointIndex] };
-});
+function toRouteId(code) {
+  return code.toLowerCase().replace(/\s+/g, "");
+}
 
-const route = {
-  id: "a1",
-  sourceId: source.id,
-  code: source.code,
-  name: source.directions.map((direction) => direction.name).join(" / "),
-  agency: "COTUM Express S.A.C.",
-  color: "#2563eb",
-  esAproximada: false,
-  source: source.source,
-  sourceUrl: source.sourceUrl,
-  speedMetersPerSecond: 6.5,
-  points,
-  cumulativeDistances,
-  totalDistanceMeters,
-  directions: source.directions.map((direction) => ({ id: direction.id, name: direction.name, geometrySource: direction.geometrySource })),
-  stops: [...outboundStops, ...inboundStops],
-};
+function routeOrder(code) {
+  const [prefix, number] = code.split(" ");
+  return `${prefix === "A" ? "1" : prefix === "BT" ? "2" : "3"}${number.padStart(3, "0")}`;
+}
 
-const companies = {
-  cotum: { id: "cotum", name: "COTUM Express S.A.C.", routeId: "a1" },
-};
-const buses = {
-  "a1-01": { id: "a1-01", name: "A 1-01", companyId: "cotum", routeId: "a1", initialOffset: 0 },
-  "a1-02": { id: "a1-02", name: "A 1-02", companyId: "cotum", routeId: "a1", initialOffset: 0.34 },
-  "a1-03": { id: "a1-03", name: "A 1-03", companyId: "cotum", routeId: "a1", initialOffset: 0.67 },
-};
+function buildRoute(source, color) {
+  const [outbound, inbound] = source.directions;
+  if (!outbound || !inbound) throw new Error(`La ruta ${source.code} requiere dos sentidos.`);
+  const points = [...outbound.geometry, ...inbound.geometry.slice(1)];
+  const { cumulativeDistances, totalDistanceMeters } = buildDistanceData(points);
+  const outboundStops = outbound.stops.map((stop) => {
+    const pointIndex = nearestPointIndex(points, [stop.lat, stop.lng], 0, outbound.geometry.length);
+    return { id: `${outbound.id}-${stop.id}`, name: stop.name, pointIndex, directionId: outbound.id, distanceMeters: cumulativeDistances[pointIndex] };
+  });
+  const inboundOffset = outbound.geometry.length - 1;
+  const inboundStops = inbound.stops.map((stop) => {
+    const pointIndex = nearestPointIndex(points, [stop.lat, stop.lng], inboundOffset, inbound.geometry.length);
+    return { id: `${inbound.id}-${stop.id}`, name: stop.name, pointIndex, directionId: inbound.id, distanceMeters: cumulativeDistances[pointIndex] };
+  });
+  const routeId = toRouteId(source.code);
+  return {
+    id: routeId,
+    sourceId: source.id,
+    code: source.code,
+    name: source.directions.map((direction) => direction.name).join(" / "),
+    agency: routeId === "a1" ? "COTUM Express S.A.C." : "Operador pendiente de confirmar",
+    color,
+    esAproximada: false,
+    source: source.source,
+    sourceUrl: source.sourceUrl,
+    speedMetersPerSecond: 6.5,
+    points,
+    cumulativeDistances,
+    totalDistanceMeters,
+    directions: source.directions.map((direction) => ({ id: direction.id, name: direction.name, geometrySource: direction.geometrySource })),
+    stops: [...outboundStops, ...inboundStops],
+  };
+}
 
-const initialPositions = Object.fromEntries(Object.values(buses).map((bus) => {
-  const distanceMeters = route.totalDistanceMeters * bus.initialOffset;
-  const pointIndex = cumulativeDistances.findIndex((distance) => distance >= distanceMeters);
-  const index = pointIndex < 0 ? points.length - 1 : pointIndex;
-  const [lat, lng] = points[index];
-  return [bus.id, { rutaId: "a1", indiceSegmento: Math.max(0, index - 1), progreso: 0, distanciaMetros: distanceMeters, lat, lng, actualizadoEn: 0 }];
+const files = (await readdir(sourceDirectory)).filter((file) => /^a-\d+\.json$/.test(file));
+const sources = await Promise.all(files.map(async (file) => JSON.parse(await readFile(resolve(sourceDirectory, file), "utf8"))));
+sources.sort((first, second) => routeOrder(first.code).localeCompare(routeOrder(second.code)));
+const routes = Object.fromEntries(sources.map((source, index) => {
+  const route = buildRoute(source, routeColors[index % routeColors.length]);
+  return [route.id, route];
 }));
 
-await writeFile(routesOutput, `// Generado desde public/data/routes/a-1.json. No editar manualmente.\nexport const routes = ${JSON.stringify({ a1: route }, null, 2)};\n`);
-await writeFile(companiesOutput, `export const companies = ${JSON.stringify(companies, null, 2)};\n`);
-await writeFile(busesOutput, `export const buses = ${JSON.stringify(buses, null, 2)};\n`);
+const companies = Object.fromEntries(Object.values(routes).map((route) => {
+  const isCotum = route.id === "a1";
+  const id = isCotum ? "cotum" : `operador-${route.id}`;
+  return [id, { id, name: route.agency, routeId: route.id, provisional: !isCotum }];
+}));
+
+const buses = Object.fromEntries(Object.values(routes).flatMap((route) => {
+  const companyId = route.id === "a1" ? "cotum" : `operador-${route.id}`;
+  return [0, 0.34, 0.67].map((initialOffset, index) => {
+    const id = `${route.id}-${String(index + 1).padStart(2, "0")}`;
+    return [id, { id, name: `${route.code}-${String(index + 1).padStart(2, "0")}`, companyId, routeId: route.id, initialOffset }];
+  });
+}));
+
+const initialPositions = Object.fromEntries(Object.values(buses).map((bus) => {
+  const route = routes[bus.routeId];
+  const distanceMeters = route.totalDistanceMeters * bus.initialOffset;
+  const pointIndex = route.cumulativeDistances.findIndex((distance) => distance >= distanceMeters);
+  const index = pointIndex < 0 ? route.points.length - 1 : pointIndex;
+  const [lat, lng] = route.points[index];
+  return [bus.id, { rutaId: route.id, indiceSegmento: Math.max(0, index - 1), progreso: 0, distanciaMetros: distanceMeters, lat, lng, actualizadoEn: 0 }];
+}));
+
+await writeFile(routesOutput, `// Generado desde public/data/routes. No editar manualmente.\nexport const routes = ${JSON.stringify(routes, null, 2)};\n`);
+await writeFile(companiesOutput, `// Generado desde las rutas importadas.\nexport const companies = ${JSON.stringify(companies, null, 2)};\n`);
+await writeFile(busesOutput, `// Flota simulada inicial: tres buses por ruta.\nexport const buses = ${JSON.stringify(buses, null, 2)};\n`);
 await writeFile(seedOutput, `${JSON.stringify({
-  empresas: { cotum: { nombre: companies.cotum.name, rutaId: "a1", buses: Object.fromEntries(Object.keys(buses).map((id) => [id, true])) } },
-  rutas: { a1: route },
+  empresas: Object.fromEntries(Object.values(companies).map((company) => [company.id, {
+    nombre: company.name,
+    rutaId: company.routeId,
+    provisional: company.provisional,
+    buses: Object.fromEntries(Object.values(buses).filter((bus) => bus.companyId === company.id).map((bus) => [bus.id, true])),
+  }])),
+  rutas: routes,
   buses: Object.fromEntries(Object.entries(buses).map(([id, bus]) => [id, { nombre: bus.name, empresaId: bus.companyId, rutaId: bus.routeId, activo: true }])),
   posicionesBuses: initialPositions,
   simulacion: { control: { activa: false, intervaloMs: 3000, ultimaActualizacion: 0 } },
 }, null, 2)}\n`);
-console.log(`Generada A 1: ${(route.totalDistanceMeters / 1000).toFixed(1)} km, ${route.points.length} puntos, ${route.stops.length} paraderos.`);
+console.log(`Generadas ${Object.keys(routes).length} rutas y ${Object.keys(buses).length} buses simulados.`);

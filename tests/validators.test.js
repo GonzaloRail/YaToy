@@ -5,10 +5,12 @@ import { routes } from "../src/js/data/routes.js";
 import { validateNetwork } from "../src/js/core/validators.js";
 
 describe("validación de la red local", () => {
-  it("acepta la ruta A 1 y sus tres buses simulados", () => {
+  it("acepta las once rutas y sus buses simulados", () => {
     expect(() => validateNetwork(routes, companies, buses)).not.toThrow();
-    expect(Object.keys(buses)).toHaveLength(3);
-    expect(Object.keys(routes)).toEqual(["a1"]);
+    expect(Object.keys(buses)).toHaveLength(33);
+    expect(Object.keys(routes)).toHaveLength(11);
+    expect(Object.keys(routes)).toContain("a1");
+    expect(Object.keys(routes)).toContain("a11");
   });
 
   it("rechaza un bus asociado a una ruta inexistente", () => {

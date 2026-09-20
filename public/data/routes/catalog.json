@@ -13,61 +13,71 @@
       "id": "65343",
       "code": "A 2",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65343",
-      "available": false
+      "available": true,
+      "dataFile": "a-2.json"
     },
     {
       "id": "64582",
       "code": "A 3",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64582",
-      "available": false
+      "available": true,
+      "dataFile": "a-3.json"
     },
     {
       "id": "64884",
       "code": "A 4",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64884",
-      "available": false
+      "available": true,
+      "dataFile": "a-4.json"
     },
     {
       "id": "64413",
       "code": "A 5",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64413",
-      "available": false
+      "available": true,
+      "dataFile": "a-5.json"
     },
     {
       "id": "65242",
       "code": "A 6",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65242",
-      "available": false
+      "available": true,
+      "dataFile": "a-6.json"
     },
     {
       "id": "65344",
       "code": "A 7",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65344",
-      "available": false
+      "available": true,
+      "dataFile": "a-7.json"
     },
     {
       "id": "65658",
       "code": "A 8",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65658",
-      "available": false
+      "available": true,
+      "dataFile": "a-8.json"
     },
     {
       "id": "65600",
       "code": "A 9",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65600",
-      "available": false
+      "available": true,
+      "dataFile": "a-9.json"
     },
     {
       "id": "64516",
       "code": "A 10",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=64516",
-      "available": false
+      "available": true,
+      "dataFile": "a-10.json"
     },
     {
       "id": "65569",
       "code": "A 11",
       "sourceUrl": "https://wikiroutes.info/es/arequipa?routes=65569",
-      "available": false
+      "available": true,
+      "dataFile": "a-11.json"
     },
     {
       "id": "65632",
