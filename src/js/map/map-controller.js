@@ -10,10 +10,10 @@ export class MapController {
     this.busMarkers = new Map();
     this.userMarker = null;
     this.userAccuracyCircle = null;
+    this.userEstimateVisible = false;
     this.selectedStop = null;
     this.stopSelectionHandler = null;
     this.userLocationHandler = null;
-    this.isChoosingLocation = false;
     this.routeBounds = L.latLngBounds([]);
 
     L.control.zoom({ position: "bottomright" }).addTo(this.map);
@@ -26,7 +26,7 @@ export class MapController {
     this.createBusMarkers();
     this.fitRoutes();
     this.map.on("click", (event) => {
-      if (this.isChoosingLocation) this.userLocationHandler?.({ lat: event.latlng.lat, lng: event.latlng.lng, accuracy: 20 });
+      this.userLocationHandler?.({ lat: event.latlng.lat, lng: event.latlng.lng, accuracy: 20 });
     });
   }
 
@@ -116,16 +116,6 @@ export class MapController {
     this.userLocationHandler = handler;
   }
 
-  beginLocationSelection() {
-    this.isChoosingLocation = true;
-    this.map.getContainer().classList.add("is-choosing-location");
-  }
-
-  endLocationSelection() {
-    this.isChoosingLocation = false;
-    this.map.getContainer().classList.remove("is-choosing-location");
-  }
-
   highlightStop(routeId, stopId) {
     this.stopLayers.forEach((stops, currentRouteId) => {
       stops.forEach(({ stop, marker }) => {
@@ -147,8 +137,19 @@ export class MapController {
         iconAnchor: [18, 40],
       });
       this.userMarker = L.marker(latLng, { icon, draggable: true, autoPan: true, title: "Tu ubicación" })
-        .bindTooltip("Tu ubicación", { direction: "top" })
+        .bindTooltip(`
+          <div class="user-location-card__content">
+            <strong>Tu ubicación</strong>
+            <span>Ubicación seleccionada</span>
+          </div>`, {
+          direction: "top",
+          offset: [0, -28],
+          permanent: true,
+          opacity: 1,
+          className: "user-location-card",
+        })
         .addTo(this.map);
+      this.userEstimateVisible = true;
       this.userMarker.on("dragend", () => {
         const point = this.userMarker.getLatLng();
         this.userLocationHandler?.({ lat: point.lat, lng: point.lng, accuracy: 20 });
@@ -158,6 +159,28 @@ export class MapController {
     }
     this.userMarker.setLatLng(latLng);
     this.userAccuracyCircle.setLatLng(latLng).setRadius(location.accuracy);
+  }
+
+  showUserEstimate({ eta, details }) {
+    if (!this.userMarker) return;
+    const content = `
+      <div class="user-location-card__content">
+        <strong>Tu ubicación</strong>
+        <span>${eta}</span>
+        ${details.map((detail) => `<span>${detail}</span>`).join("")}
+      </div>`;
+    if (!this.userEstimateVisible) {
+      this.userMarker.unbindTooltip().bindTooltip(content, {
+        direction: "top",
+        offset: [0, -28],
+        permanent: true,
+        opacity: 1,
+        className: "user-location-card",
+      });
+      this.userEstimateVisible = true;
+      return;
+    }
+    this.userMarker.setTooltipContent(content);
   }
 
   focusUserLocation() {
