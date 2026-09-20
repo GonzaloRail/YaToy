@@ -26,6 +26,7 @@ let simulationTimer = null;
 let lastTickAt = null;
 let states = {};
 let controlState = null;
+let tickInProgress = false;
 
 function setFeedback(message, isError = false) {
   feedback.textContent = message;
@@ -107,20 +108,28 @@ async function writePositions() {
 }
 
 async function tick() {
-  if (!isLeaseOwner()) {
-    stopLocalTimer();
-    setFeedback("La simulación fue tomada por otra sesión.", true);
-    return;
+  if (tickInProgress) return;
+  tickInProgress = true;
+  try {
+    if (!isLeaseOwner() && !await acquireLease()) {
+      stopLocalTimer();
+      setFeedback("La simulación fue tomada por otra sesión.", true);
+      return;
+    }
+    const now = performance.now();
+    const elapsedMs = now - lastTickAt;
+    lastTickAt = now;
+    states = Object.fromEntries(Object.entries(states).map(([busId, state]) => [
+      busId,
+      advanceBus(state, routes[state.routeId], elapsedMs),
+    ]));
+    await writePositions();
+    setFeedback(`Se actualizaron ${Object.keys(states).length} buses.`);
+  } catch (error) {
+    setFeedback("No fue posible actualizar la simulación. Se reintentará automáticamente.", true);
+  } finally {
+    tickInProgress = false;
   }
-  const now = performance.now();
-  const elapsedMs = now - lastTickAt;
-  lastTickAt = now;
-  states = Object.fromEntries(Object.entries(states).map(([busId, state]) => [
-    busId,
-    advanceBus(state, routes[state.routeId], elapsedMs),
-  ]));
-  await writePositions();
-  setFeedback(`Se actualizaron ${Object.keys(states).length} buses.`);
 }
 
 async function startSimulation() {
@@ -195,7 +204,10 @@ observeAuthState((user) => {
   controls.hidden = false;
   onValue(controlRef, (snapshot) => {
     controlState = snapshot.val();
-    if (simulationTimer && !isLeaseOwner()) stopLocalTimer();
+    if (simulationTimer && controlState?.propietarioId && controlState.propietarioId !== sessionId) {
+      stopLocalTimer();
+      setFeedback("La simulación fue tomada por otra sesión.", true);
+    }
     renderControlState();
   });
 });
