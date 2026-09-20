@@ -34,9 +34,6 @@ const liveIndicator = document.querySelector("#live-indicator");
 const liveRegion = document.querySelector("#live-region");
 const etaMessage = document.querySelector("#eta-message");
 const distanceMessage = document.querySelector("#distance-message");
-const authDialog = document.querySelector("#auth-dialog");
-const openAuthButton = document.querySelector("#open-auth");
-const closeAuthButton = document.querySelector("#close-auth");
 const loginTab = document.querySelector("#login-tab");
 const registerTab = document.querySelector("#register-tab");
 const loginForm = document.querySelector("#login-form");
@@ -47,7 +44,6 @@ const sessionName = document.querySelector("#session-name");
 const logoutButton = document.querySelector("#logout");
 const authGate = document.querySelector("#auth-gate");
 const authenticatedApp = document.querySelector("#authenticated-app");
-const openAuthGateButton = document.querySelector("#open-auth-gate");
 const controlPanel = document.querySelector("#control-panel");
 const sheetToggle = document.querySelector("#sheet-toggle");
 const chooseLocationButton = document.querySelector("#choose-location");
@@ -492,18 +488,8 @@ sheetToggle.addEventListener("pointerup", (event) => {
   setSheetState(movement > 0 ? "collapsed" : "expanded");
 });
 
-function openAuthentication(mode = "login") {
-  setAuthMode(authDialog, mode);
-  authDialog.showModal();
-  document.querySelector("#login-email").focus();
-}
-
-openAuthButton.addEventListener("click", () => openAuthentication());
-openAuthGateButton.addEventListener("click", () => openAuthentication());
-
-closeAuthButton.addEventListener("click", () => authDialog.close());
-loginTab.addEventListener("click", () => setAuthMode(authDialog, "login"));
-registerTab.addEventListener("click", () => setAuthMode(authDialog, "register"));
+loginTab.addEventListener("click", () => setAuthMode(authGate, "login"));
+registerTab.addEventListener("click", () => setAuthMode(authGate, "register"));
 
 document.querySelectorAll(".password-toggle").forEach((button) => {
   button.addEventListener("click", () => {
@@ -522,7 +508,6 @@ loginForm.addEventListener("submit", async (event) => {
   setAuthFeedback(authFeedback, "");
   try {
     await loginUser({ email: formData.get("email"), password: formData.get("password") });
-    authDialog.close();
     loginForm.reset();
   } catch (error) {
     setAuthFeedback(authFeedback, getAuthErrorMessage(error), true);
@@ -542,7 +527,6 @@ registerForm.addEventListener("submit", async (event) => {
       email: formData.get("email"),
       password: formData.get("password"),
     });
-    authDialog.close();
     registerForm.reset();
   } catch (error) {
     setAuthFeedback(authFeedback, getAuthErrorMessage(error), true);
@@ -580,9 +564,8 @@ observeAuthState((user) => {
   const isAuthenticated = Boolean(user);
   authGate.hidden = isAuthenticated;
   authenticatedApp.hidden = !isAuthenticated;
-  openAuthButton.hidden = isAuthenticated;
   sessionActions.hidden = !isAuthenticated;
-  sessionName.textContent = user?.email ?? "";
+  sessionName.textContent = user?.displayName || "Tu cuenta";
   userData.hidden = !isAuthenticated;
   favorites = {};
   setUserDataFeedback("");
@@ -593,7 +576,6 @@ observeAuthState((user) => {
     updateFavoriteControls();
     return;
   }
-  if (authDialog.open) authDialog.close();
   initializeAuthenticatedApp();
   updateFavoriteControls();
   unsubscribeFavorites = subscribeToFavorites(user.uid, (nextFavorites) => {

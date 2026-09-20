@@ -4,7 +4,9 @@ export function setAuthMode(dialog, mode) {
   dialog.querySelector("#register-form").hidden = isLogin;
   dialog.querySelector("#login-tab").setAttribute("aria-selected", String(isLogin));
   dialog.querySelector("#register-tab").setAttribute("aria-selected", String(!isLogin));
-  dialog.querySelector("#auth-feedback").textContent = "";
+  const feedback = dialog.querySelector("#auth-feedback");
+  feedback.textContent = "";
+  feedback.classList.remove("is-error");
 }
 
 export function setAuthFeedback(element, message, isError = false) {

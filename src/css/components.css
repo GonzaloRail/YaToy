@@ -58,18 +58,19 @@
 .bus-list strong { font-size: 0.875rem; }
 .bus-list small { color: var(--color-muted); font-size: 0.75rem; }
 .route-swatch { display: inline-block; flex: 0 0 auto; width: 11px; height: 11px; background: var(--route-color); border-radius: 50%; }
-.auth-dialog { width: min(100% - 32px, 430px); padding: var(--space-5); color: var(--color-text); background: var(--color-surface); border: 0; border-radius: var(--radius-lg); box-shadow: 0 20px 50px rgb(15 23 42 / 0.25); }
-.auth-dialog::backdrop { background: rgb(15 23 42 / 0.55); }
-.dialog-heading { display: flex; justify-content: space-between; gap: var(--space-3); }
-.dialog-heading h2 { margin: 0; font-size: 1.25rem; line-height: 1.25; }
 .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; margin-top: var(--space-5); border-bottom: 1px solid var(--color-border); }
 .auth-tabs button { min-height: 44px; color: var(--color-muted); font-weight: 700; background: transparent; border: 0; border-bottom: 3px solid transparent; }
 .auth-tabs button[aria-selected="true"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.auth-tabs button { cursor: pointer; }
+.auth-tabs { margin-top: var(--space-6); }
 .auth-feedback { min-height: 1.5em; margin: var(--space-3) 0 0; color: #166534; font-size: 0.875rem; }
 .auth-feedback.is-error { color: #b91c1c; }
 .auth-form input { min-height: 46px; width: 100%; padding: 0 var(--space-3); color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
+.auth-form input::placeholder { color: #94a3b8; }
+.auth-form input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(37 99 235 / 0.14); outline: 0; }
 .password-field { position: relative; }
 .password-field input { padding-right: 84px; }
 .password-toggle { position: absolute; top: 50%; right: var(--space-2); min-height: 32px; padding: 0 var(--space-2); color: var(--color-primary); font-size: 0.8125rem; font-weight: 700; background: transparent; border: 0; border-radius: 6px; transform: translateY(-50%); }
 .password-toggle:hover { background: #eff6ff; }
 .auth-form small { color: var(--color-muted); font-size: 0.75rem; }
+.auth-footnote { margin: var(--space-5) 0 0; color: var(--color-muted); font-size: 0.75rem; line-height: 1.45; text-align: center; }

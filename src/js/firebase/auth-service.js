@@ -3,12 +3,14 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
 } from "firebase/auth";
 import { auth } from "./firebase-app.js";
 import { createUserProfile } from "./database-service.js";
 
 export async function registerUser({ name, email, password }) {
   const credential = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(credential.user, { displayName: name });
   await createUserProfile(credential.user.uid, name);
   return credential.user;
 }
