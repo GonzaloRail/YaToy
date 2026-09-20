@@ -86,7 +86,22 @@
         </div>
       </header>
 
-      <main id="main-content" class="main-layout">
+      <main id="company-catalog" class="company-catalog" aria-labelledby="company-catalog-title">
+        <div class="company-catalog-heading">
+          <p class="eyebrow">Rutas disponibles</p>
+          <h1 id="company-catalog-title">Elige tu empresa de transporte</h1>
+          <p>Selecciona una ruta para ver todos sus buses activos y saber cuál llega primero.</p>
+        </div>
+        <label class="sr-only" for="company-search">Buscar empresa o ruta</label>
+        <div class="company-search">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>
+          <input id="company-search" type="search" placeholder="Buscar empresa o ruta" autocomplete="off" />
+        </div>
+        <p id="company-catalog-feedback" class="company-catalog-feedback" role="status" aria-live="polite"></p>
+        <div id="company-grid" class="company-grid"></div>
+      </main>
+
+      <main id="main-content" class="main-layout" hidden>
         <section class="map-region" aria-label="Mapa de rutas de buses">
           <div id="map" class="map" role="application" aria-label="Mapa interactivo de Arequipa"></div>
           <div class="map-legend" aria-label="Leyenda de rutas">
@@ -102,10 +117,10 @@
           <div class="panel-heading">
             <div>
               <p class="eyebrow">Rastreo en vivo</p>
-              <h1 id="panel-title">Encuentra tu bus</h1>
+              <h1 id="panel-title">Ruta A 1 de COTUM</h1>
             </div>
-            <button id="fit-routes" class="icon-button" type="button" aria-label="Ver todas las rutas" title="Ver todas las rutas">
-              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5M9 4 4 9m11-5 5 5M9 20l-5-5m11 5 5-5" /></svg>
+            <button id="back-to-catalog" class="icon-button" type="button" aria-label="Volver a rutas" title="Volver a rutas">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6M9 12h11" /></svg>
             </button>
           </div>
 

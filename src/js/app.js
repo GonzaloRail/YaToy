@@ -25,7 +25,12 @@ const busSelect = document.querySelector("#bus-select");
 const stopSelect = document.querySelector("#stop-select");
 const locateUserButton = document.querySelector("#locate-user");
 const clearSelectionButton = document.querySelector("#clear-selection");
-const fitRoutesButton = document.querySelector("#fit-routes");
+const mainContent = document.querySelector("#main-content");
+const companyCatalog = document.querySelector("#company-catalog");
+const companySearch = document.querySelector("#company-search");
+const companyGrid = document.querySelector("#company-grid");
+const companyCatalogFeedback = document.querySelector("#company-catalog-feedback");
+const backToCatalogButton = document.querySelector("#back-to-catalog");
 const visibleBusCount = document.querySelector("#visible-bus-count");
 const busList = document.querySelector("#bus-list");
 const routeLegend = document.querySelector("#route-legend");
@@ -81,6 +86,50 @@ Object.values(routes).forEach((route) => {
   item.innerHTML = `<span class="route-swatch" style="--route-color: ${route.color}" aria-hidden="true"></span>${route.code}`;
   routeLegend.append(item);
 });
+
+function renderCompanyCatalog() {
+  const term = companySearch.value.trim().toLowerCase();
+  const visibleCompanies = Object.values(companies).filter((company) => {
+    const route = routes[company.routeId];
+    return [company.name, route.code, route.name].some((value) => value.toLowerCase().includes(term));
+  });
+  companyGrid.replaceChildren();
+  visibleCompanies.forEach((company) => {
+    const route = routes[company.routeId];
+    const fleetSize = Object.values(buses).filter((bus) => bus.companyId === company.id && bus.routeId === route.id).length;
+    const card = document.createElement("button");
+    card.className = "company-card";
+    card.type = "button";
+    card.innerHTML = `
+      <span class="company-card-image"><img src="./assets/bus-marker-icon.svg" alt="" /></span>
+      <span class="company-card-content"><span class="company-card-route">Ruta ${route.code}</span><strong>${company.name}</strong><small>${fleetSize} ${fleetSize === 1 ? "bus activo" : "buses activos"}</small></span>
+      <span class="company-card-arrow" aria-hidden="true">→</span>`;
+    card.addEventListener("click", () => openCompanyRoute(company));
+    companyGrid.append(card);
+  });
+  companyCatalogFeedback.textContent = visibleCompanies.length ? "" : "No encontramos una empresa o ruta con esa búsqueda.";
+}
+
+function openCompanyRoute(company) {
+  const route = routes[company.routeId];
+  routeSelect.value = route.id;
+  populateBusSelector(busSelect, buses, routes, route.id);
+  populateStopSelector(stopSelect, route);
+  busSelect.value = "all";
+  companyCatalog.hidden = true;
+  mainContent.hidden = false;
+  initializeAuthenticatedApp();
+  mapController?.fitRoutes();
+  liveRegion.textContent = `${company.name}, ruta ${route.code}: ${Object.values(buses).filter((bus) => bus.companyId === company.id).length} buses activos.`;
+}
+
+function showCompanyCatalog() {
+  teardownAuthenticatedApp();
+  mainContent.hidden = true;
+  companyCatalog.hidden = false;
+  companySearch.value = "";
+  renderCompanyCatalog();
+}
 
 function initializeAuthenticatedApp() {
   if (appInitialized) return;
@@ -245,6 +294,7 @@ function renderCatalog() {
 }
 
 routeSearch.addEventListener("input", renderCatalog);
+companySearch.addEventListener("input", renderCompanyCatalog);
 
 function getSelectedStop() {
   return findStop(getSelectedRoute(), stopSelect.value);
@@ -582,7 +632,7 @@ clearSelectionButton.addEventListener("click", () => {
   liveRegion.textContent = "Mostrando todas las rutas y buses.";
 });
 
-fitRoutesButton.addEventListener("click", () => mapController?.fitRoutes());
+backToCatalogButton.addEventListener("click", showCompanyCatalog);
 
 observeAuthState((user) => {
   unsubscribeFavorites?.();
@@ -600,10 +650,12 @@ observeAuthState((user) => {
   historyList.replaceChildren();
   if (!isAuthenticated) {
     teardownAuthenticatedApp();
+    mainContent.hidden = true;
+    companyCatalog.hidden = true;
     updateFavoriteControls();
     return;
   }
-  initializeAuthenticatedApp();
+  showCompanyCatalog();
   updateFavoriteControls();
   unsubscribeFavorites = subscribeToFavorites(user.uid, (nextFavorites) => {
     favorites = nextFavorites;
