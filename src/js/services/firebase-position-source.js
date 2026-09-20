@@ -40,6 +40,7 @@ export class FirebasePositionSource {
         ...position,
         segmentIndex: position.indiceSegmento,
         progress: position.progreso,
+        distanceMeters: position.distanciaMetros ?? position.distanceMeters,
       }]));
       this.refreshPositions();
       const updatedAt = this.getLatestUpdate();
