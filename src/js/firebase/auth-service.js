@@ -1,6 +1,10 @@
 import {
   createUserWithEmailAndPassword,
+  browserLocalPersistence,
+  browserSessionPersistence,
   onAuthStateChanged,
+  sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -15,9 +19,14 @@ export async function registerUser({ name, email, password }) {
   return credential.user;
 }
 
-export async function loginUser({ email, password }) {
+export async function loginUser({ email, password, remember }) {
+  await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
   const credential = await signInWithEmailAndPassword(auth, email, password);
   return credential.user;
+}
+
+export function sendPasswordReset(email) {
+  return sendPasswordResetEmail(auth, email);
 }
 
 export function logoutUser() {
@@ -36,6 +45,7 @@ export function getAuthErrorMessage(error) {
     "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
     "auth/network-request-failed": "No hay conexión. Revisa tu red e inténtalo nuevamente.",
     "auth/too-many-requests": "Demasiados intentos. Espera un momento antes de volver a intentarlo.",
+    "auth/missing-email": "Ingresa tu correo para recuperar la contraseña.",
   };
   return messages[error.code] ?? "No fue posible completar la operación. Inténtalo nuevamente.";
 }

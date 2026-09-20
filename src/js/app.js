@@ -7,7 +7,7 @@ import { routes } from "./data/routes.js";
 import { calculateDistanceEtaSeconds, calculateEtaSeconds, formatEta } from "./core/eta-calculator.js";
 import { calculateDistanceMeters, formatDistance } from "./core/geo-utils.js";
 import { validateNetwork } from "./core/validators.js";
-import { getAuthErrorMessage, loginUser, logoutUser, observeAuthState, registerUser } from "./firebase/auth-service.js";
+import { getAuthErrorMessage, loginUser, logoutUser, observeAuthState, registerUser, sendPasswordReset } from "./firebase/auth-service.js";
 import { MapController } from "./map/map-controller.js";
 import { getCurrentLocation } from "./services/geolocation-service.js";
 import { FirebasePositionSource } from "./services/firebase-position-source.js";
@@ -38,6 +38,7 @@ const loginTab = document.querySelector("#login-tab");
 const registerTab = document.querySelector("#register-tab");
 const loginForm = document.querySelector("#login-form");
 const registerForm = document.querySelector("#register-form");
+const forgotPasswordButton = document.querySelector("#forgot-password");
 const authFeedback = document.querySelector("#auth-feedback");
 const sessionActions = document.querySelector("#session-actions");
 const sessionName = document.querySelector("#session-name");
@@ -490,6 +491,9 @@ sheetToggle.addEventListener("pointerup", (event) => {
 
 loginTab.addEventListener("click", () => setAuthMode(authGate, "login"));
 registerTab.addEventListener("click", () => setAuthMode(authGate, "register"));
+document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+  button.addEventListener("click", () => setAuthMode(authGate, button.dataset.authMode));
+});
 
 document.querySelectorAll(".password-toggle").forEach((button) => {
   button.addEventListener("click", () => {
@@ -507,12 +511,35 @@ loginForm.addEventListener("submit", async (event) => {
   setFormBusy(loginForm, true, "Ingresar");
   setAuthFeedback(authFeedback, "");
   try {
-    await loginUser({ email: formData.get("email"), password: formData.get("password") });
+    await loginUser({
+      email: formData.get("email"),
+      password: formData.get("password"),
+      remember: formData.get("remember") === "on",
+    });
     loginForm.reset();
   } catch (error) {
     setAuthFeedback(authFeedback, getAuthErrorMessage(error), true);
   } finally {
     setFormBusy(loginForm, false, "Ingresar");
+  }
+});
+
+forgotPasswordButton.addEventListener("click", async () => {
+  const email = loginForm.elements.email.value.trim();
+  if (!email) {
+    setAuthFeedback(authFeedback, "Ingresa tu correo para recuperar la contraseña.", true);
+    loginForm.elements.email.focus();
+    return;
+  }
+  forgotPasswordButton.disabled = true;
+  setAuthFeedback(authFeedback, "");
+  try {
+    await sendPasswordReset(email);
+    setAuthFeedback(authFeedback, "Te enviamos un enlace para restablecer tu contraseña.");
+  } catch (error) {
+    setAuthFeedback(authFeedback, getAuthErrorMessage(error), true);
+  } finally {
+    forgotPasswordButton.disabled = false;
   }
 });
 

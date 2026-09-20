@@ -10,17 +10,17 @@
     <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
     <section id="auth-gate" class="auth-gate" aria-labelledby="auth-gate-title">
       <div class="auth-gate-visual" aria-hidden="true">
-        <span class="auth-route-line"></span>
-        <span class="auth-stop auth-stop-one"></span>
-        <span class="auth-stop auth-stop-two"></span>
-        <img class="auth-bus" src="./assets/bus-marker-icon.svg" alt="" />
-        <p>Muévete por Arequipa<br /><strong>sin perder tiempo.</strong></p>
+        <span class="auth-sun"></span>
+        <span class="auth-hill auth-hill-one"></span>
+        <span class="auth-hill auth-hill-two"></span>
+        <span class="auth-stop-sign"></span>
+        <span class="auth-bus-scene"><img src="./assets/bus-marker-icon.svg" alt="" /></span>
+        <span class="auth-person"><span></span></span>
       </div>
       <div class="auth-gate-card">
         <div class="auth-brand"><img class="auth-brand-icon" src="./assets/bus-marker-icon.svg" alt="" aria-hidden="true" /><span>YaToy</span></div>
-        <p class="eyebrow">Tu movilidad, más simple</p>
-        <h1 id="auth-gate-title">Encuentra tu próximo bus</h1>
-        <p class="auth-intro">Consulta rutas, mira los buses en el mapa y guarda tus paraderos favoritos.</p>
+        <h1 id="auth-gate-title">Inicia sesión para acceder a <span>YaToy</span></h1>
+        <p class="auth-intro">Tu guía para moverte por Arequipa.</p>
         <div class="auth-tabs" role="tablist" aria-label="Opciones de acceso">
           <button id="login-tab" type="button" role="tab" aria-selected="true">Iniciar sesión</button>
           <button id="register-tab" type="button" role="tab" aria-selected="false">Crear cuenta</button>
@@ -28,38 +28,54 @@
         <p id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
         <form id="login-form" class="auth-form">
           <div class="field-group">
-            <label for="login-email">Correo electrónico</label>
-            <input id="login-email" name="email" type="email" autocomplete="email" placeholder="tu@correo.com" required />
+            <label class="sr-only" for="login-email">Correo electrónico</label>
+            <div class="auth-input">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3.5 6.5h17v11h-17zM4 7l8 6 8-6" /></svg>
+              <input id="login-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="Ingresa tu correo" required />
+            </div>
           </div>
           <div class="field-group">
-            <label for="login-password">Contraseña</label>
-            <div class="password-field">
-              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres" minlength="6" required />
+            <label class="sr-only" for="login-password">Contraseña</label>
+            <div class="auth-input password-field">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" minlength="6" required />
               <button class="password-toggle" type="button" data-password-target="login-password" aria-pressed="false">Mostrar</button>
             </div>
           </div>
+          <div class="auth-options">
+            <label class="remember-option"><input id="remember" name="remember" type="checkbox" checked /> <span>Recordarme</span></label>
+            <button id="forgot-password" class="forgot-password" type="button">¿Olvidaste tu contraseña?</button>
+          </div>
           <button class="primary-button" type="submit">Iniciar sesión</button>
+          <p class="auth-switch">¿No tienes una cuenta? <button class="auth-switch-button" type="button" data-auth-mode="register">Crear una cuenta</button></p>
         </form>
         <form id="register-form" class="auth-form" hidden>
           <div class="field-group">
-            <label for="register-name">¿Cómo te llamas?</label>
-            <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Tu nombre" minlength="2" maxlength="80" required />
+            <label class="sr-only" for="register-name">¿Cómo te llamas?</label>
+            <div class="auth-input">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+              <input id="register-name" name="name" type="text" autocomplete="name" placeholder="¿Cómo te llamas?" minlength="2" maxlength="80" required />
+            </div>
           </div>
           <div class="field-group">
-            <label for="register-email">Correo electrónico</label>
-            <input id="register-email" name="email" type="email" autocomplete="email" placeholder="tu@correo.com" required />
+            <label class="sr-only" for="register-email">Correo electrónico</label>
+            <div class="auth-input">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3.5 6.5h17v11h-17zM4 7l8 6 8-6" /></svg>
+              <input id="register-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="Ingresa tu correo" required />
+            </div>
           </div>
           <div class="field-group">
-            <label for="register-password">Contraseña</label>
-            <div class="password-field">
-              <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" minlength="6" aria-describedby="password-help" required />
+            <label class="sr-only" for="register-password">Contraseña</label>
+            <div class="auth-input password-field">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+              <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="Crea una contraseña" minlength="6" aria-describedby="password-help" required />
               <button class="password-toggle" type="button" data-password-target="register-password" aria-pressed="false">Mostrar</button>
             </div>
             <small id="password-help">Usa al menos 6 caracteres.</small>
           </div>
           <button class="primary-button" type="submit">Crear mi cuenta</button>
+          <p class="auth-switch">¿Ya tienes una cuenta? <button class="auth-switch-button" type="button" data-auth-mode="login">Inicia sesión</button></p>
         </form>
-        <p class="auth-footnote">Tus rutas y favoritos estarán disponibles en cualquier dispositivo.</p>
       </div>
     </section>
     <div id="authenticated-app" class="app-shell" hidden>
