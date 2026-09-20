@@ -4,8 +4,8 @@ import { APP_CONFIG } from "./config/app-config.js";
 import { buses } from "./data/buses.js";
 import { companies } from "./data/companies.js";
 import { routes } from "./data/routes.js";
-import { calculateDistanceEtaSeconds, calculateEtaSeconds, formatEta } from "./core/eta-calculator.js";
-import { calculateDistanceMeters, formatDistance } from "./core/geo-utils.js";
+import { calculateBusDistanceMeters, calculateDistanceEtaSeconds, calculateEtaSeconds, formatEta } from "./core/eta-calculator.js";
+import { calculateDistanceMeters, formatDistance, projectLocationAheadOfBus, projectLocationToRoute } from "./core/geo-utils.js";
 import { validateNetwork } from "./core/validators.js";
 import { getAuthErrorMessage, loginUser, logoutUser, observeAuthState, registerUser, sendPasswordReset } from "./firebase/auth-service.js";
 import { MapController } from "./map/map-controller.js";
@@ -54,7 +54,6 @@ const authGate = document.querySelector("#auth-gate");
 const authenticatedApp = document.querySelector("#authenticated-app");
 const controlPanel = document.querySelector("#control-panel");
 const sheetToggle = document.querySelector("#sheet-toggle");
-const chooseLocationButton = document.querySelector("#choose-location");
 const confirmLocationButton = document.querySelector("#confirm-location");
 const locationHelp = document.querySelector("#location-help");
 const routeSearch = document.querySelector("#route-search");
@@ -216,46 +215,103 @@ function getSelectedRoute() {
 }
 
 function updateEta() {
-  const route = getSelectedRoute();
-  let stop = findStop(route, stopSelect.value);
-  if (userLocation && route) {
-    const routeDistance = Math.min(...route.points.map(([lat, lng]) => calculateDistanceMeters(userLocation, { lat, lng })));
-    if (routeDistance > 400) {
-      etaMessage.textContent = `Estás a ${formatDistance(routeDistance)} del recorrido ${route.code}.`;
-      distanceMessage.textContent = "Puedes ver la ruta y sus buses, pero no hay un paradero cercano para estimar llegada.";
+  let route = getSelectedRoute();
+  if (userLocation && !route) {
+    const closestRoute = Object.values(routes).map((candidate) => ({
+      route: candidate,
+      projection: projectLocationToRoute(userLocation, candidate),
+    })).map((candidate) => ({
+      ...candidate,
+      distance: candidate.projection?.distanceFromRoute ?? Number.POSITIVE_INFINITY,
+    })).sort((first, second) => first.distance - second.distance)[0];
+
+    if (closestRoute.distance > 400) {
+      etaMessage.textContent = "No hay una ruta cercana a tu ubicación para estimar la llegada.";
+      distanceMessage.textContent = `La ruta más cercana está a ${formatDistance(closestRoute.distance)}.`;
       return;
     }
-    if (!stop) {
-      stop = route.stops.reduce((closest, candidate) => {
+
+    route = closestRoute.route;
+    routeSelect.value = route.id;
+    populateBusSelector(busSelect, buses, routes, route.id);
+    populateStopSelector(stopSelect, route);
+    mapController?.applyFilter(route.id, "all");
+    updateBusSummary();
+  }
+
+  const locationOnRoute = userLocation && route ? projectLocationToRoute(userLocation, route) : null;
+  let stop = findStop(route, stopSelect.value);
+  if (userLocation && route) {
+    const routeDistance = locationOnRoute?.distanceFromRoute ?? Number.POSITIVE_INFINITY;
+    if (routeDistance > 400) {
+      etaMessage.textContent = `Estás a ${formatDistance(routeDistance)} del recorrido ${route.code}.`;
+      distanceMessage.textContent = "Selecciona un punto más cercano al recorrido para estimar la llegada.";
+      return;
+    }
+    if (route.stops.length) {
+      const nearestStop = route.stops.reduce((closest, candidate) => {
         const [lat, lng] = route.points[candidate.pointIndex];
         const [closestLat, closestLng] = route.points[closest.pointIndex];
         return calculateDistanceMeters(userLocation, { lat, lng }) < calculateDistanceMeters(userLocation, { lat: closestLat, lng: closestLng }) ? candidate : closest;
       });
+      stop = nearestStop;
       stopSelect.value = stop.id;
       mapController?.highlightStop(route.id, stop.id);
     }
   }
+
+
+  const destination = locationOnRoute ?? stop;
   const routeBusIds = Object.values(buses).filter((bus) => bus.routeId === route?.id && latestPositions[bus.id]);
-  const candidateBusIds = busSelect.value === "all" ? routeBusIds.map((bus) => bus.id) : [busSelect.value];
-  if (!route || !stop || !candidateBusIds.length) {
-    etaMessage.textContent = "Selecciona una ruta, un bus y un paradero para ver el ETA.";
+  const candidateBusIds = (busSelect.value === "all" ? routeBusIds.map((bus) => bus.id) : [busSelect.value])
+    .filter((busId) => latestPositions[busId]);
+  let nextBus = null;
+  if (!route || !destination || !candidateBusIds.length) {
+    etaMessage.textContent = userLocation
+      ? "Esperando la posición del bus para calcular el tiempo de llegada."
+      : "Selecciona una ruta, un bus y un paradero para ver el ETA.";
   } else {
-    const nextBus = candidateBusIds.map((busId) => {
+    nextBus = candidateBusIds.map((busId) => {
       const position = latestPositions[busId];
-      const etaSeconds = route.totalDistanceMeters
-        ? calculateDistanceEtaSeconds(position, stop, route)
-        : calculateEtaSeconds(position, stop.pointIndex, route.points.length, route.secondsPerSegment);
+      const busDistanceMeters = calculateBusDistanceMeters(position, route);
+      const busDestination = userLocation && Number.isFinite(busDistanceMeters)
+        ? projectLocationAheadOfBus(userLocation, route, busDistanceMeters)
+        : destination;
+      const canCalculateByDistance = route.totalDistanceMeters &&
+        Number.isFinite(busDistanceMeters) &&
+        Number.isFinite(busDestination?.distanceMeters) &&
+        Number.isFinite(route.speedMetersPerSecond) &&
+        route.speedMetersPerSecond > 0;
+      let etaSeconds = canCalculateByDistance
+        ? calculateDistanceEtaSeconds({ ...position, distanceMeters: busDistanceMeters }, busDestination, route)
+        : calculateEtaSeconds(
+          position,
+          destination.pointIndex,
+          route.points.length,
+          route.secondsPerSegment ?? route.totalDistanceMeters / route.points.length / route.speedMetersPerSecond,
+        );
+      if (userLocation && calculateDistanceMeters(userLocation, position) <= 20) etaSeconds = 0;
       return { busId, etaSeconds };
     }).sort((first, second) => first.etaSeconds - second.etaSeconds)[0];
     etaMessage.textContent = `${buses[nextBus.busId].name}: ${formatEta(nextBus.etaSeconds)}.`;
   }
 
-  if (!userLocation || !route || !stop) {
+  if (!userLocation || !route) {
     distanceMessage.textContent = "Activa tu ubicación para calcular la distancia al paradero.";
     return;
   }
-  const [lat, lng] = route.points[stop.pointIndex];
-  distanceMessage.textContent = `Estás a ${formatDistance(calculateDistanceMeters(userLocation, { lat, lng }))} del paradero.`;
+  const stopDistanceMessage = stop
+    ? (() => {
+      const [lat, lng] = route.points[stop.pointIndex];
+      return `Estás a ${formatDistance(calculateDistanceMeters(userLocation, { lat, lng }))} del paradero.`;
+    })()
+    : null;
+  const busDistanceMessage = nextBus
+    ? `${buses[nextBus.busId].name} está a ${formatDistance(calculateDistanceMeters(userLocation, latestPositions[nextBus.busId]))} de tu ubicación.`
+    : null;
+  const distanceDetails = [stopDistanceMessage, busDistanceMessage].filter(Boolean);
+  distanceMessage.textContent = distanceDetails.join(" ");
+  mapController?.showUserEstimate({ eta: etaMessage.textContent, details: distanceDetails });
 }
 
 async function loadRouteCatalog() {
@@ -489,9 +545,8 @@ locateUserButton.addEventListener("click", async () => {
   try {
     setUserLocation(await getCurrentLocation());
     mapController?.focusUserLocation();
-    mapController?.endLocationSelection();
     confirmLocationButton.hidden = true;
-    locationHelp.textContent = "Ubicación del dispositivo activada. Puedes cambiarla eligiendo un punto en el mapa.";
+    locationHelp.textContent = "Ubicación del dispositivo activada. Puedes cambiarla tocando cualquier punto del mapa.";
     liveRegion.textContent = "Ubicación actualizada. Solo se usa en este navegador.";
   } catch (error) {
     liveRegion.textContent = error.message;
@@ -502,15 +557,8 @@ locateUserButton.addEventListener("click", async () => {
   }
 });
 
-chooseLocationButton.addEventListener("click", () => {
-  mapController?.beginLocationSelection();
-  locationHelp.textContent = "Toca cualquier punto del mapa para ubicarte. Después puedes arrastrar el pin.";
-  confirmLocationButton.hidden = true;
-});
-
 confirmLocationButton.addEventListener("click", () => {
   if (!userLocation) return;
-  mapController?.endLocationSelection();
   confirmLocationButton.hidden = true;
   locationHelp.textContent = "Ubicación manual confirmada.";
   liveRegion.textContent = "Ubicación manual confirmada.";
