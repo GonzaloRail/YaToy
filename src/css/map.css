@@ -10,8 +10,13 @@
 .user-marker-wrapper { background: transparent; border: 0; }
 .user-marker { display: block; color: #0f172a; filter: drop-shadow(0 2px 3px rgb(15 23 42 / 0.25)); }
 .user-marker svg { width: 36px; height: 44px; fill: currentColor; stroke: #fff; stroke-width: 1.25; }
-.map.is-choosing-location { cursor: crosshair; }
+.user-location-card { width: 250px; max-width: calc(100vw - 48px); padding: 0; color: inherit; white-space: normal; overflow-wrap: anywhere; background: transparent; border: 0; box-shadow: none; }
+.user-location-card::before { display: none; }
+.user-location-card__content { display: grid; gap: 4px; width: 100%; box-sizing: border-box; padding: 10px 12px; color: #0f172a; font-size: 0.75rem; line-height: 1.35; overflow-wrap: anywhere; background: rgb(255 255 255 / 0.97); border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 4px 14px rgb(15 23 42 / 0.18); }
+.user-location-card__content strong { font-size: 0.8125rem; }
+.user-location-card__content span { color: #334155; }
 .leaflet-control-zoom a { width: 44px !important; height: 44px !important; line-height: 42px !important; color: var(--color-text) !important; }
 .leaflet-popup-content-wrapper { border-radius: 10px; }
 @media (min-width: 768px) { .map-legend { top: var(--space-4); left: var(--space-4); max-width: 280px; } }
+@media (max-width: 767px) { .user-location-card { width: min(220px, calc(100vw - 40px)); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
