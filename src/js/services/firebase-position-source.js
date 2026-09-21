@@ -1,5 +1,5 @@
 import { onValue, ref } from "firebase/database";
-import { advanceBus, createInitialState } from "../core/simulation-engine.js";
+import { createPositionsAtElapsedTime } from "../core/simulation-engine.js";
 import { database } from "../firebase/firebase-app.js";
 
 export class FirebasePositionSource {
@@ -8,22 +8,21 @@ export class FirebasePositionSource {
     this.intervalMs = intervalMs;
     this.listeners = new Set();
     this.statusListeners = new Set();
-    this.unsubscribePositions = null;
+    this.unsubscribeControl = null;
     this.unsubscribeConnection = null;
+    this.unsubscribeServerTimeOffset = null;
     this.statusTimer = null;
-    this.fallbackTimer = null;
-    this.lastFallbackTickAt = null;
+    this.positionTimer = null;
     this.connected = false;
-    this.remotePositions = {};
-    this.fallbackPositions = Object.fromEntries(
-      Object.values(buses).map((bus) => [bus.id, createInitialState(bus, routes[bus.routeId])]),
-    );
-    this.positions = { ...this.fallbackPositions };
+    this.serverTimeOffset = 0;
+    this.control = null;
+    this.buses = buses;
+    this.positions = createPositionsAtElapsedTime(buses, routes, 0);
   }
 
   subscribe(listener) {
     this.listeners.add(listener);
-    if (Object.keys(this.positions).length) listener(this.positions, this.getLatestUpdate());
+    if (Object.keys(this.positions).length) listener(this.positions, this.getServerTime());
     return () => this.listeners.delete(listener);
   }
 
@@ -33,19 +32,10 @@ export class FirebasePositionSource {
   }
 
   start() {
-    if (this.unsubscribePositions) return;
-    this.unsubscribePositions = onValue(ref(database, "posicionesBuses"), (snapshot) => {
-      const rawPositions = snapshot.val() ?? {};
-      this.remotePositions = Object.fromEntries(Object.entries(rawPositions).map(([busId, position]) => [busId, {
-        ...position,
-        segmentIndex: position.indiceSegmento,
-        progress: position.progreso,
-        distanceMeters: position.distanciaMetros ?? position.distanceMeters,
-      }]));
-      this.refreshPositions();
-      const updatedAt = this.getLatestUpdate();
-      this.listeners.forEach((listener) => listener(this.positions, updatedAt));
-      this.connected = true;
+    if (this.unsubscribeControl) return;
+    this.unsubscribeControl = onValue(ref(database, "simulacion/control"), (snapshot) => {
+      this.control = snapshot.val();
+      this.tick();
       this.emitStatus();
     }, (error) => {
       this.connected = false;
@@ -55,49 +45,50 @@ export class FirebasePositionSource {
       this.connected = snapshot.val() === true;
       this.emitStatus();
     });
+    this.unsubscribeServerTimeOffset = onValue(ref(database, ".info/serverTimeOffset"), (snapshot) => {
+      this.serverTimeOffset = snapshot.val() ?? 0;
+      this.tick();
+    });
     this.statusTimer = window.setInterval(() => this.emitStatus(), 3_000);
-    this.lastFallbackTickAt = performance.now();
-    this.fallbackTimer = window.setInterval(() => this.tickFallback(), this.intervalMs);
+    this.positionTimer = window.setInterval(() => this.tick(), this.intervalMs);
   }
 
   stop() {
-    this.unsubscribePositions?.();
+    this.unsubscribeControl?.();
     this.unsubscribeConnection?.();
+    this.unsubscribeServerTimeOffset?.();
     window.clearInterval(this.statusTimer);
-    window.clearInterval(this.fallbackTimer);
-    this.unsubscribePositions = null;
+    window.clearInterval(this.positionTimer);
+    this.unsubscribeControl = null;
     this.unsubscribeConnection = null;
+    this.unsubscribeServerTimeOffset = null;
     this.statusTimer = null;
-    this.fallbackTimer = null;
+    this.positionTimer = null;
   }
 
-  refreshPositions() {
-    this.positions = { ...this.fallbackPositions, ...this.remotePositions };
+  getServerTime() {
+    return Date.now() + this.serverTimeOffset;
   }
 
-  tickFallback() {
-    const now = performance.now();
-    const elapsedMs = now - this.lastFallbackTickAt;
-    this.lastFallbackTickAt = now;
-    this.fallbackPositions = Object.fromEntries(
-      Object.entries(this.fallbackPositions).map(([busId, state]) => this.remotePositions[busId]
-        ? [busId, state]
-        : [busId, advanceBus(state, this.routes[state.routeId], elapsedMs)]),
-    );
-    this.refreshPositions();
-    this.listeners.forEach((listener) => listener(this.positions, Date.now()));
+  getElapsedMs() {
+    const elapsedBeforeStart = Number(this.control?.transcurridoMs) || 0;
+    if (!this.control?.activa || !Number.isFinite(this.control?.inicioEn)) return elapsedBeforeStart;
+    return elapsedBeforeStart + Math.max(0, this.getServerTime() - this.control.inicioEn);
   }
 
-  getLatestUpdate() {
-    return Math.max(0, ...Object.values(this.positions).map((position) => position.actualizadoEn ?? 0));
+  tick() {
+    const updatedAt = this.getServerTime();
+    this.positions = createPositionsAtElapsedTime(this.buses, this.routes, this.getElapsedMs());
+    this.listeners.forEach((listener) => listener(this.positions, updatedAt));
   }
 
   emitStatus(status = {}) {
-    const updatedAt = status.updatedAt ?? this.getLatestUpdate();
+    const updatedAt = status.updatedAt ?? this.getServerTime();
     this.statusListeners.forEach((listener) => listener({
       connected: status.connected ?? this.connected,
       updatedAt,
       error: status.error,
+      active: this.control?.activa === true,
     }));
   }
 }

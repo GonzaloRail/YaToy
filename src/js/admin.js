@@ -1,16 +1,10 @@
 import "../css/admin.css";
-import { get, onValue, ref, runTransaction, serverTimestamp, update } from "firebase/database";
-import { APP_CONFIG } from "./config/app-config.js";
-import { createInitialState, advanceBus } from "./core/simulation-engine.js";
-import { buses } from "./data/buses.js";
-import { routes } from "./data/routes.js";
+import { onValue, ref, serverTimestamp, update } from "firebase/database";
 import { observeAuthState } from "./firebase/auth-service.js";
 import { database } from "./firebase/firebase-app.js";
 import { formatUpdateTime } from "./ui/status-banner.js";
 
 const ADMIN_UID = import.meta.env.VITE_ADMIN_UID;
-const LEASE_DURATION_MS = 10_000;
-const sessionId = crypto.randomUUID();
 const accessMessage = document.querySelector("#admin-access-message");
 const controls = document.querySelector("#admin-controls");
 const simulatorStatus = document.querySelector("#simulator-status");
@@ -22,128 +16,44 @@ const pauseButton = document.querySelector("#pause-simulation");
 const resetButton = document.querySelector("#reset-simulation");
 const controlRef = ref(database, "simulacion/control");
 
-let simulationTimer = null;
-let lastTickAt = null;
-let states = {};
 let controlState = null;
-let tickInProgress = false;
+let serverTimeOffset = 0;
 
 function setFeedback(message, isError = false) {
   feedback.textContent = message;
   feedback.classList.toggle("is-error", isError);
 }
 
-function isLeaseOwner() {
-  return controlState?.propietarioId === sessionId && controlState?.leaseExpiraEn > Date.now();
+function getServerTime() {
+  return Date.now() + serverTimeOffset;
+}
+
+function getElapsedMs() {
+  const savedElapsed = Number(controlState?.transcurridoMs) || 0;
+  if (!controlState?.activa || !Number.isFinite(controlState?.inicioEn)) return savedElapsed;
+  return savedElapsed + Math.max(0, getServerTime() - controlState.inicioEn);
 }
 
 function renderControlState() {
-  const isActive = controlState?.activa === true && controlState?.leaseExpiraEn > Date.now();
+  const isActive = controlState?.activa === true;
   simulatorStatus.textContent = isActive ? "Activo" : "Detenido";
-  leaseStatus.textContent = isLeaseOwner() ? "Esta sesión" : isActive ? "Otra sesión" : "Disponible";
+  leaseStatus.textContent = "Global";
   writeStatus.textContent = controlState?.ultimaActualizacion ? formatUpdateTime(controlState.ultimaActualizacion) : "Sin actualizaciones";
-  startButton.disabled = isActive && !isLeaseOwner();
-  pauseButton.disabled = !isLeaseOwner();
-  resetButton.disabled = isActive && !isLeaseOwner();
-}
-
-function stopLocalTimer() {
-  window.clearInterval(simulationTimer);
-  simulationTimer = null;
-}
-
-async function loadStates() {
-  const snapshot = await get(ref(database, "posicionesBuses"));
-  const persisted = snapshot.val() ?? {};
-  states = Object.fromEntries(Object.values(buses).map((bus) => {
-    const position = persisted[bus.id];
-    if (!position) return [bus.id, createInitialState(bus, routes[bus.routeId])];
-    return [bus.id, {
-      ...bus,
-      segmentIndex: position.indiceSegmento,
-      progress: position.progreso,
-      distanceMeters: position.distanciaMetros ?? routes[bus.routeId].cumulativeDistances?.[position.indiceSegmento] ?? 0,
-      lat: position.lat,
-      lng: position.lng,
-    }];
-  }));
-}
-
-async function acquireLease() {
-  const result = await runTransaction(controlRef, (current) => {
-    const now = Date.now();
-    if (current?.activa && current.leaseExpiraEn > now && current.propietarioId !== sessionId) return;
-    return {
-      activa: true,
-      intervaloMs: APP_CONFIG.simulationIntervalMs,
-      propietarioId: sessionId,
-      leaseExpiraEn: now + LEASE_DURATION_MS,
-      ultimaActualizacion: now,
-    };
-  });
-  controlState = result.snapshot.val();
-  return result.committed && controlState?.propietarioId === sessionId;
-}
-
-async function writePositions() {
-  const updates = {
-    "simulacion/control/activa": true,
-    "simulacion/control/intervaloMs": APP_CONFIG.simulationIntervalMs,
-    "simulacion/control/leaseExpiraEn": Date.now() + LEASE_DURATION_MS,
-    "simulacion/control/ultimaActualizacion": serverTimestamp(),
-  };
-  Object.entries(states).forEach(([busId, state]) => {
-    updates[`posicionesBuses/${busId}`] = {
-      rutaId: state.routeId,
-      indiceSegmento: state.segmentIndex,
-      progreso: state.progress,
-      distanciaMetros: state.distanceMeters ?? null,
-      lat: state.lat,
-      lng: state.lng,
-      actualizadoEn: serverTimestamp(),
-      simuladorId: sessionId,
-    };
-  });
-  await update(ref(database), updates);
-}
-
-async function tick() {
-  if (tickInProgress) return;
-  tickInProgress = true;
-  try {
-    if (!isLeaseOwner() && !await acquireLease()) {
-      stopLocalTimer();
-      setFeedback("La simulación fue tomada por otra sesión.", true);
-      return;
-    }
-    const now = performance.now();
-    const elapsedMs = now - lastTickAt;
-    lastTickAt = now;
-    states = Object.fromEntries(Object.entries(states).map(([busId, state]) => [
-      busId,
-      advanceBus(state, routes[state.routeId], elapsedMs),
-    ]));
-    await writePositions();
-    setFeedback(`Se actualizaron ${Object.keys(states).length} buses.`);
-  } catch (error) {
-    setFeedback("No fue posible actualizar la simulación. Se reintentará automáticamente.", true);
-  } finally {
-    tickInProgress = false;
-  }
+  startButton.disabled = isActive;
+  pauseButton.disabled = !isActive;
+  resetButton.disabled = false;
 }
 
 async function startSimulation() {
   startButton.disabled = true;
   try {
-    if (!await acquireLease()) {
-      setFeedback("Otra sesión administra la simulación en este momento.", true);
-      return;
-    }
-    await loadStates();
-    lastTickAt = performance.now();
-    await tick();
-    stopLocalTimer();
-    simulationTimer = window.setInterval(() => void tick(), APP_CONFIG.simulationIntervalMs);
+    await update(controlRef, {
+      activa: true,
+      inicioEn: serverTimestamp(),
+      transcurridoMs: Number(controlState?.transcurridoMs) || 0,
+      ultimaActualizacion: serverTimestamp(),
+    });
+    setFeedback("Simulación iniciada para todos los usuarios.");
   } catch (error) {
     console.error("No fue posible iniciar la simulación:", error);
     const message = error.code === "PERMISSION_DENIED"
@@ -156,29 +66,26 @@ async function startSimulation() {
 }
 
 async function pauseSimulation() {
-  if (!isLeaseOwner()) return;
-  stopLocalTimer();
   try {
-    await update(ref(database), {
-      "simulacion/control/activa": false,
-      "simulacion/control/leaseExpiraEn": Date.now(),
-      "simulacion/control/ultimaActualizacion": serverTimestamp(),
+    await update(controlRef, {
+      activa: false,
+      transcurridoMs: getElapsedMs(),
+      ultimaActualizacion: serverTimestamp(),
     });
-    setFeedback("Simulación pausada. Otra sesión podrá iniciarla.");
+    setFeedback("Simulación pausada para todos los usuarios.");
   } catch (error) {
     setFeedback("No fue posible pausar la simulación.", true);
   }
 }
 
 async function resetSimulation() {
-  if (!isLeaseOwner() && !await acquireLease()) {
-    setFeedback("Otra sesión administra la simulación en este momento.", true);
-    return;
-  }
-  states = Object.fromEntries(Object.values(buses).map((bus) => [bus.id, createInitialState(bus, routes[bus.routeId])]));
   try {
-    await writePositions();
-    setFeedback("Las posiciones iniciales se restauraron.");
+    await update(controlRef, {
+      inicioEn: serverTimestamp(),
+      transcurridoMs: 0,
+      ultimaActualizacion: serverTimestamp(),
+    });
+    setFeedback(controlState?.activa ? "Las posiciones se reiniciaron y la simulación continúa." : "Las posiciones iniciales se restauraron.");
   } catch (error) {
     setFeedback("No fue posible reiniciar las posiciones.", true);
   }
@@ -187,7 +94,6 @@ async function resetSimulation() {
 startButton.addEventListener("click", () => void startSimulation());
 pauseButton.addEventListener("click", () => void pauseSimulation());
 resetButton.addEventListener("click", () => void resetSimulation());
-window.addEventListener("pagehide", stopLocalTimer);
 
 observeAuthState((user) => {
   if (!user) {
@@ -202,12 +108,11 @@ observeAuthState((user) => {
   }
   accessMessage.textContent = `Sesión administradora: ${user.email}.`;
   controls.hidden = false;
+  onValue(ref(database, ".info/serverTimeOffset"), (snapshot) => {
+    serverTimeOffset = snapshot.val() ?? 0;
+  });
   onValue(controlRef, (snapshot) => {
     controlState = snapshot.val();
-    if (simulationTimer && controlState?.propietarioId && controlState.propietarioId !== sessionId) {
-      stopLocalTimer();
-      setFeedback("La simulación fue tomada por otra sesión.", true);
-    }
     renderControlState();
   });
 });

@@ -122,7 +122,7 @@ function openCompanyRoute(company) {
   panelTitle.textContent = company.provisional ? `Ruta ${route.code}` : `Ruta ${route.code} de COTUM`;
   routeNotice.textContent = `Las posiciones de los ${Object.values(buses).filter((bus) => bus.routeId === route.id).length} buses son simuladas. El recorrido ${route.code} fue importado de referencias públicas.`;
   initializeAuthenticatedApp();
-  mapController?.fitRoutes();
+  mapController?.fitRoute(route.id);
   liveRegion.textContent = `${company.name}, ruta ${route.code}: ${Object.values(buses).filter((bus) => bus.companyId === company.id).length} buses activos.`;
 }
 
@@ -159,10 +159,10 @@ function initializeAuthenticatedApp() {
     }
     updateEta();
   });
-  positionSource.subscribeStatus?.(({ connected, updatedAt, error }) => {
+  positionSource.subscribeStatus?.(({ connected, updatedAt, error, active }) => {
     const isStale = updatedAt > 0 && Date.now() - updatedAt > APP_CONFIG.stalePositionMs;
-    liveIndicator.textContent = error || !connected ? "Sin conexión" : isStale ? "Datos desactualizados" : "Activa";
-    liveIndicator.classList.toggle("is-warning", isStale);
+    liveIndicator.textContent = error || !connected ? "Sin conexión" : !active ? "Simulación pausada" : isStale ? "Datos desactualizados" : "Activa";
+    liveIndicator.classList.toggle("is-warning", !active || isStale);
     liveIndicator.classList.toggle("is-offline", Boolean(error) || !connected);
   });
   positionSource.start();
@@ -344,7 +344,7 @@ function renderCatalog() {
       populateBusSelector(busSelect, buses, routes, localRoute.id);
       populateStopSelector(stopSelect, localRoute);
       applySelection();
-      mapController?.fitRoutes();
+      mapController?.fitRoute(localRoute.id);
       catalogFeedback.textContent = `${catalogRoute.code} cargada desde WikiRoutes.`;
     });
     item.append(button);
@@ -480,8 +480,17 @@ routeSelect.addEventListener("change", () => {
   liveRegion.textContent = routeSelect.value === "all" ? "Mostrando todas las rutas." : `Mostrando ${routes[routeSelect.value].code}.`;
 });
 
-busSelect.addEventListener("change", () => applySelection({ focusBus: true }));
-busSelect.addEventListener("change", () => void maybeRecordSearch());
+busSelect.addEventListener("change", () => {
+  const bus = buses[busSelect.value];
+  if (bus && routeSelect.value !== bus.routeId) {
+    routeSelect.value = bus.routeId;
+    populateBusSelector(busSelect, buses, routes, bus.routeId);
+    busSelect.value = bus.id;
+    populateStopSelector(stopSelect, routes[bus.routeId]);
+  }
+  applySelection({ focusBus: true });
+  void maybeRecordSearch();
+});
 
 stopSelect.addEventListener("change", () => {
   const route = getSelectedRoute();

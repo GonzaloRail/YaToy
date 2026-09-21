@@ -85,14 +85,29 @@ export class MapController {
     Object.values(this.routes).forEach((route) => {
       const isRouteVisible = routeId === "all" || route.id === routeId;
       const routeLayer = this.routeLayers.get(route.id);
-      routeLayer.setStyle({ opacity: isRouteVisible ? 0.9 : 0.12, weight: isRouteVisible ? 6 : 3 });
-      this.stopLayers.get(route.id).forEach(({ marker }) => marker.setStyle({ opacity: isRouteVisible ? 1 : 0.15, fillOpacity: isRouteVisible ? 1 : 0.15 }));
+      routeLayer.setStyle({ opacity: 0.9, weight: 6 });
+      if (isRouteVisible) {
+        routeLayer.addTo(this.map);
+      } else {
+        routeLayer.remove();
+      }
+      this.stopLayers.get(route.id).forEach(({ marker }) => {
+        if (isRouteVisible) {
+          marker.addTo(this.map);
+        } else {
+          marker.remove();
+        }
+      });
     });
 
     Object.values(this.buses).forEach((bus) => {
       const isVisible = (routeId === "all" || bus.routeId === routeId) && (busId === "all" || bus.id === busId);
       const marker = this.busMarkers.get(bus.id);
-      marker.setOpacity(isVisible ? 1 : 0.15);
+      if (isVisible) {
+        marker.addTo(this.map);
+      } else {
+        marker.remove();
+      }
       marker.getElement()?.classList.toggle("is-selected", busId === bus.id);
     });
   }
@@ -106,6 +121,11 @@ export class MapController {
 
   fitRoutes() {
     this.map.fitBounds(this.routeBounds, { padding: [40, 40] });
+  }
+
+  fitRoute(routeId) {
+    const routeLayer = this.routeLayers.get(routeId);
+    if (routeLayer) this.map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
   }
 
   setStopSelectionHandler(handler) {

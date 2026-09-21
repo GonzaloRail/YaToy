@@ -15,7 +15,7 @@ El prototipo funcional incluye:
 - Geolocalización opcional para calcular la distancia al paradero.
 - Diseño responsive, con panel inferior en móvil y panel lateral en escritorio.
 - Registro, login, favoritos e historial privado por usuario.
-- Panel administrativo con simulador central y lease para impedir duplicados.
+- Panel administrativo con controles globales para iniciar, pausar y reiniciar la simulación.
 - Pruebas del motor de simulación, ETA y cálculos geográficos.
 
 El movimiento continúa siendo **simulado**, no GPS real. Firebase centraliza las posiciones para que todos los navegadores vean la misma simulación.
@@ -63,9 +63,9 @@ tests/                       Pruebas unitarias
 
 ## Simulación
 
-Cada bus conserva un segmento y un progreso entre `0` y `1`. Cada tres segundos se avanza el progreso y se interpola su latitud y longitud entre el punto actual y el siguiente. Al terminar el último segmento, el bus vuelve al primero para formar un circuito continuo.
+Cada bus conserva un segmento y un progreso entre `0` y `1`. Su posición se interpola entre los puntos consecutivos de su ruta y, al terminar el último segmento, vuelve al primero para formar un circuito continuo.
 
-La interfaz consume una fuente de posiciones desacoplada. El despliegue usa `FirebasePositionSource`; `LocalPositionSource` queda disponible para pruebas sin red. Una futura fuente GPS real puede implementar el mismo contrato sin rediseñar el mapa, filtros o ETA.
+La interfaz consume una fuente de posiciones desacoplada. En el despliegue, `FirebasePositionSource` lee un reloj compartido desde Firebase y cada navegador calcula las mismas posiciones localmente. Por ello, los buses siguen simulándose aunque el panel administrativo se cierre. `LocalPositionSource` queda disponible para pruebas sin red.
 
 ## ETA y ubicación
 
@@ -120,7 +120,7 @@ npx -y firebase-tools@latest database:set / data/seed-data.json --project yatoy-
 
 ## Simulación central
 
-La aplicación lee posiciones desde Realtime Database mediante `FirebasePositionSource`. El panel [`admin.html`](./admin.html) ejecuta el motor de simulación y escribe las posiciones compartidas cada tres segundos.
+La aplicación lee el estado global de la simulación desde Realtime Database mediante `FirebasePositionSource`. El panel [`admin.html`](./admin.html) solo inicia, pausa o reinicia el reloj compartido; los navegadores calculan las posiciones desde ese reloj.
 
 Para una demostración local:
 
@@ -128,9 +128,9 @@ Para una demostración local:
 2. Inicia sesión en `index.html` con la cuenta administradora.
 3. Abre `http://localhost:5173/admin.html` en la misma sesión.
 4. Pulsa **Iniciar simulación**.
-5. Abre el mapa en dos pestañas o dispositivos y confirma que todos ven el mismo movimiento.
+5. Cierra el panel administrativo si lo deseas, abre el mapa en dos pestañas o dispositivos y confirma que todos ven el mismo movimiento.
 
-Solo el UID administrador puede escribir posiciones. El panel usa un lease temporal de diez segundos: una segunda pestaña no puede iniciar otro simulador mientras el lease de la primera continúe vigente. Si se cierra el panel, el lease vence y una nueva sesión puede asumir el control.
+Solo el UID administrador puede iniciar, pausar o reiniciar la simulación. La simulación permanece activa hasta que esa cuenta pulse **Pausar simulación**, incluso si se cierra el panel administrativo o todos los navegadores que muestran el mapa.
 
 ## Despliegue en GitHub Pages
 

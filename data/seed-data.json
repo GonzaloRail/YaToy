@@ -44444,8 +44444,9 @@
   },
   "simulacion": {
     "control": {
-      "activa": false,
-      "intervaloMs": 3000,
+      "activa": true,
+      "inicioEn": 0,
+      "transcurridoMs": 0,
       "ultimaActualizacion": 0
     }
   }

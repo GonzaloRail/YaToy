@@ -26,8 +26,8 @@
       ".read": true,
       ".write": false,
       "control": {
-        ".write": "auth != null && auth.uid === 'QH6CYFAerQNL3eAqaPpqIBPo9Cn1' && (!data.exists() || !data.child('leaseExpiraEn').exists() || data.child('leaseExpiraEn').val() <= now || data.child('propietarioId').val() === newData.child('propietarioId').val())",
-        ".validate": "newData.hasChildren(['activa', 'intervaloMs', 'propietarioId', 'leaseExpiraEn', 'ultimaActualizacion']) && newData.child('activa').isBoolean() && newData.child('intervaloMs').isNumber() && newData.child('leaseExpiraEn').isNumber() && newData.child('ultimaActualizacion').isNumber()"
+        ".write": "auth != null && auth.uid === 'QH6CYFAerQNL3eAqaPpqIBPo9Cn1'",
+        ".validate": "newData.hasChildren(['activa', 'inicioEn', 'transcurridoMs', 'ultimaActualizacion']) && newData.child('activa').isBoolean() && newData.child('inicioEn').isNumber() && newData.child('transcurridoMs').isNumber() && newData.child('transcurridoMs').val() >= 0 && newData.child('ultimaActualizacion').isNumber()"
       }
     },
     "usuarios": {

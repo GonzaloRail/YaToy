@@ -49,3 +49,11 @@ export function positionAtDistance(busState, route) {
   const [lat, lng] = interpolatePoint(route.points[segmentIndex], route.points[segmentIndex + 1], progress);
   return { ...busState, distanceMeters, segmentIndex, progress, lat, lng };
 }
+
+export function createPositionsAtElapsedTime(buses, routes, elapsedMs) {
+  return Object.fromEntries(Object.values(buses).map((bus) => {
+    const route = routes[bus.routeId];
+    const initialState = createInitialState(bus, route);
+    return [bus.id, advanceBus(initialState, route, elapsedMs)];
+  }));
+}

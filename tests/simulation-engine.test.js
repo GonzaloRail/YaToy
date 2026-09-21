@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { advanceBus, createInitialState, interpolatePoint } from "../src/js/core/simulation-engine.js";
+import { advanceBus, createInitialState, createPositionsAtElapsedTime, interpolatePoint } from "../src/js/core/simulation-engine.js";
 
 const route = {
   points: [[0, 0], [0, 10], [10, 10]],
@@ -52,5 +52,22 @@ describe("motor de simulación", () => {
     expect(result.segmentIndex).toBe(1);
     expect(result.progress).toBeCloseTo(0.05);
     expect(result.lng).toBeCloseTo(1.05);
+  });
+
+  it("reconstruye la misma posición desde el tiempo global de simulación", () => {
+    const routes = {
+      distance: {
+        points: [[0, 0], [0, 1], [0, 2]],
+        cumulativeDistances: [0, 100, 200],
+        totalDistanceMeters: 200,
+        speedMetersPerSecond: 10,
+      },
+    };
+    const buses = { bus: { id: "bus", routeId: "distance", initialOffset: 0.25 } };
+
+    const positions = createPositionsAtElapsedTime(buses, routes, 1_000);
+
+    expect(positions.bus.distanceMeters).toBe(60);
+    expect(positions.bus.lng).toBeCloseTo(0.6);
   });
 });
